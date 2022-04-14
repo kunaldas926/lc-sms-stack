@@ -1,3 +1,6 @@
+@Library(['utils@master']) _
+
+import com.lmig.intl.cloud.jenkins.util.EnvConfigUtil
 
 def deployCdk() {
     echo "Stack deployment starting..."
