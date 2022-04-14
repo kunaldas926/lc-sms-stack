@@ -14,7 +14,7 @@ node('linux') {
     }
 
     stage('Build ') {
-        sh "mvn clean install"
+        sh "mvn clean verify"
     }
     
 	stage ("deploy") {
