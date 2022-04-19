@@ -4,6 +4,8 @@ import com.lmig.intl.cloud.jenkins.util.EnvConfigUtil
 
 def deployCdk() {
     echo "Stack deployment starting..."
+    // TODO: Mention version here
+    sh "npm install -g aws-cdk@latest"
     sh "cdk deploy --require-approval=never"
     echo "Stack deployment finished!"
 }
