@@ -92,6 +92,7 @@ public class LcSmsStackStack extends Stack {
 		// Defines an API Gateway REST API resource backed by our "connector" function
 		LambdaRestApi.Builder.create(this, getPrefixedName("lc-sms-gateway"))
 				.restApiName(getPrefixedName("lc-sms-gateway"))
+				.cloudWatchRole(false)
 				.handler(smsConnectorLambda)
 				.build();
 	}
