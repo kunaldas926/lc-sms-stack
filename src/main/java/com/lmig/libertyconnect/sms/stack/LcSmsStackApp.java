@@ -24,6 +24,13 @@ public final class LcSmsStackApp {
     public static class Args {
 
         @Parameter(
+                names = {"-program"},
+                description = "Required: Profile to run",
+                required = false
+        )
+        private String program;
+        
+        @Parameter(
             names = {"-profile", "-p"},
             description = "Required: Profile to run",
             required = false
