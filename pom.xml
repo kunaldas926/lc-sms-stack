@@ -19,6 +19,8 @@
 
 		<!-- Misc -->
 		<spotless.version>2.21.0</spotless.version>
+		<lombok.version>1.18.8</lombok.version>
+		<jcommander.version>1.78</jcommander.version>
 	</properties>
 
 	<dependencies>
@@ -47,6 +49,16 @@
 			<groupId>software.amazon.awscdk</groupId>
 			<artifactId>lambda-event-sources</artifactId>
 			<version>${cdk.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>${lombok.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.beust</groupId>
+			<artifactId>jcommander</artifactId>
+			<version>${jcommander.version}</version>
 		</dependency>
 
 		<dependency>

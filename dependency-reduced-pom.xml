@@ -71,11 +71,13 @@
     </dependency>
   </dependencies>
   <properties>
+    <lombok.version>1.18.8</lombok.version>
     <maven.compiler.target>1.7</maven.compiler.target>
     <cdk.version>1.152.0</cdk.version>
     <spotless.version>2.21.0</spotless.version>
     <maven.compiler.source>1.7</maven.compiler.source>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jcommander.version>1.78</jcommander.version>
     <junit.version>5.7.1</junit.version>
   </properties>
 </project>
