@@ -77,13 +77,13 @@ public class LcSmsStackStack extends Stack {
 
 		final Function smsProcessorLambda = Function.Builder.create(this, getPrefixedName("lc-sms-processor-lambda"))
 				.functionName(getPrefixedName("lc-sms-processor-lambda"))
-				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-processor", getPrefixedName("lc-sms-lambda")),
+				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-processor", getPrefixedName("lc-sms")),
 						"code/sms-processor-0.0.1-SNAPSHOT.jar"))
 				.handler("com.lmig.libertyconnect.sms.processor.handler.LambdaHandler").role(lambdaRole)
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(5)).events(eventSources).build();
 
 		final Function smsConnectorLambda = Function.Builder.create(this, getPrefixedName("lc-sms-connector-lambda"))
-				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-connector", getPrefixedName("lc-sms-lambda")),
+				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-connector", getPrefixedName("lc-sms")),
 						"code/lc-sms-connector-lambda-1.0-SNAPSHOT.jar"))
 				.functionName(getPrefixedName("lc-sms-connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler").role(lambdaRole)
