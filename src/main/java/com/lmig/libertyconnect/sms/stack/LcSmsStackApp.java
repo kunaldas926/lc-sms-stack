@@ -8,7 +8,7 @@ public final class LcSmsStackApp {
 		App app = new App();
 		final String stackName = "test-reg-dev-lc-sms-stack";
 		addTags(app, stackName);
-		new LcSmsStackStack(app, stackName);
+		new LcSmsStack(app, stackName);
 
 		app.synth();
 	}

@@ -1,4 +1,4 @@
-package com.lmig.libertyconnect.sms.stack; // sms.stack lib.connect?
+package com.lmig.libertyconnect.sms.stack; 
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,15 +24,15 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.amazon.awscdk.services.sqs.QueueEncryption;
 
-public class LcSmsStackStack extends Stack {
+public class LcSmsStack extends Stack {
 	private final String program = "test-reg";
 	private final String env = "dev";
 
-	public LcSmsStackStack(final Construct parent, final String id) {
+	public LcSmsStack(final Construct parent, final String id) {
 		this(parent, id, null);
 	}
 
-	public LcSmsStackStack(final Construct parent, final String id, final StackProps props) {
+	public LcSmsStack(final Construct parent, final String id, final StackProps props) {
 		super(parent, id, props);
 		/*
 		 * final Key stackKey = Key.Builder.create(parent,

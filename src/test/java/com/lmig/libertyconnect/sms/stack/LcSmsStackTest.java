@@ -1,6 +1,6 @@
 package com.lmig.libertyconnect.sms.stack;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 
@@ -12,16 +12,18 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import software.amazon.awscdk.core.App;
 
-class LcSmsStackStackTest {
+class LcSmsStackTest {
 	private final static ObjectMapper JSON = new ObjectMapper().configure(SerializationFeature.INDENT_OUTPUT, true);
 
 	@Test
 	void testStack() throws IOException {
 		App app = new App();
-		LcSmsStackStack stack = new LcSmsStackStack(app, "test");
+		LcSmsStack stack = new LcSmsStack(app, "test");
 
 		JsonNode actual = JSON.valueToTree(app.synth().getStackArtifact(stack.getArtifactId()).getTemplate());
 
-		assertThat(actual.toString()).contains("AWS::SQS::Queue").contains("AWS::Lambda::Function");
+		assertTrue(actual.toString().contains("AWS::SQS::Queue"));
+		assertTrue(actual.toString().contains("AWS::Lambda::Function"));
+
 	}
 }
