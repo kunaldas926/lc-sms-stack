@@ -22,7 +22,8 @@ public final class LcSmsStackApp {
 	}
 
 	public static void addTags(App app, final String stackName) {
-		Tags.of(app).add("lm_troux_uid", "7CFD56E9-332A-40F7-8A24-557EF0BFC796");
+		// 7CFD56E9-332A-40F7-8A24-557EF0BFC796
+		Tags.of(app).add("lm_troux_uid", ARGS.getLmTrouxUid());
 	}
 	
     @Data
@@ -31,14 +32,14 @@ public final class LcSmsStackApp {
         @Parameter(
             names = {"-program"},
             description = "Required: Profile to run",
-            required = false
+            required = true
         )
         public String program;
         
         @Parameter(
             names = {"-profile", "-p"},
             description = "Required: Profile to run",
-            required = false
+            required = true
         )
         private String profile;
 
@@ -47,6 +48,6 @@ public final class LcSmsStackApp {
             description = "Required: tag lm_troux_uid",
             required = false          
         )
-        private String lmTrouxUid;
+        private String lmTrouxUid;       
     }
 }
