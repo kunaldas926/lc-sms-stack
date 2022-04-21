@@ -1,5 +1,6 @@
 package com.lmig.libertyconnect.sms.stack;
 
+import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
 import lombok.Data;
@@ -7,7 +8,11 @@ import software.amazon.awscdk.core.App;
 import software.amazon.awscdk.core.Tags;
 
 public final class LcSmsStackApp {
+	
+	private static final Args ARGS = new Args();
+	
 	public static void main(final String[] args) {
+		JCommander.newBuilder().addObject(ARGS).build().parse(args);
 		App app = new App();
 		final String stackName = "test-reg-dev-lc-sms-stack";
 		addTags(app, stackName);
@@ -24,11 +29,11 @@ public final class LcSmsStackApp {
     public static class Args {
 
         @Parameter(
-                names = {"-program"},
-                description = "Required: Profile to run",
-                required = false
+            names = {"-program"},
+            description = "Required: Profile to run",
+            required = false
         )
-        private String program;
+        public String program;
         
         @Parameter(
             names = {"-profile", "-p"},

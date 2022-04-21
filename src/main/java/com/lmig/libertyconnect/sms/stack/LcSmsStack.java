@@ -9,7 +9,11 @@ import software.amazon.awscdk.core.Construct;
 import software.amazon.awscdk.core.Duration;
 import software.amazon.awscdk.core.Stack;
 import software.amazon.awscdk.core.StackProps;
-import software.amazon.awscdk.services.apigateway.LambdaRestApi;
+import software.amazon.awscdk.services.apigateway.EndpointConfiguration;
+import software.amazon.awscdk.services.apigateway.EndpointType;
+import software.amazon.awscdk.services.apigateway.LambdaIntegration;
+import software.amazon.awscdk.services.apigateway.RestApi;
+import software.amazon.awscdk.services.apigateway.StageOptions;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyDocument;
 import software.amazon.awscdk.services.iam.PolicyStatement;
@@ -89,12 +93,45 @@ public class LcSmsStack extends Stack {
 				.handler("com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler").role(lambdaRole)
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(5)).build();
 
+		
 		// Defines an API Gateway REST API resource backed by our "connector" function
-		LambdaRestApi.Builder.create(this, getPrefixedName("lc-sms-gateway"))
-				.restApiName(getPrefixedName("lc-sms-gateway"))
-				.cloudWatchRole(false)
-				.handler(smsConnectorLambda)
+		
+		/*
+		 * LambdaRestApi api = LambdaRestApi.Builder.create(this,
+		 * getPrefixedName("lc-sms-gateway"))
+		 * .restApiName(getPrefixedName("lc-sms-api")) .cloudWatchRole(false)
+		 * .endpointTypes(Arrays.asList(EndpointType.PRIVATE)) .defaultIntegration(
+		 * 
+		 * .type(IntegrationType.AWS_PROXY) .build()) .handler(smsConnectorLambda)
+		 * .build();
+		 */
+		 
+		PolicyStatement apiStatement = PolicyStatement.Builder.create().effect(Effect.ALLOW)
+				.actions(Arrays.asList(new String[] { "execute-api:Invoke" }))
+				.resources(Arrays.asList(new String[] { "*" }))
 				.build();
+
+		PolicyDocument apiPolicyDocument = PolicyDocument.Builder.create()
+				.statements(Arrays.asList(new PolicyStatement[] { apiStatement })).build();
+
+		RestApi api =
+		        RestApi.Builder.create(this, getPrefixedName("lc-sms-gateway"))	        
+		        .restApiName(getPrefixedName("lc-sms-api"))
+		        .endpointConfiguration(EndpointConfiguration.builder()
+		                 .types(Arrays.asList(EndpointType.PRIVATE))		                 
+		                 .build())	
+		        .policy(apiPolicyDocument)
+		        .deployOptions(StageOptions.builder().stageName(env).build())
+		        .cloudWatchRole(false)
+		        
+		        .build();
+		          
+
+	    LambdaIntegration getWidgetIntegration =
+	        LambdaIntegration.Builder.create(smsConnectorLambda)
+	        .build();
+
+	    api.getRoot().addMethod("POST", getWidgetIntegration);
 		
 	}
 
