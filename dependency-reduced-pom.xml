@@ -7,6 +7,22 @@
   <build>
     <plugins>
       <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.0.0</version>
+        <configuration>
+          <mainClass>com.lmig.libertyconnect.sms.stack.LcSmsStackApp</mainClass>
+        </configuration>
+      </plugin>
+      <plugin>
         <artifactId>maven-shade-plugin</artifactId>
         <version>3.2.4</version>
         <executions>
@@ -72,10 +88,10 @@
   </dependencies>
   <properties>
     <lombok.version>1.18.8</lombok.version>
-    <maven.compiler.target>1.7</maven.compiler.target>
+    <maven.compiler.target>1.8</maven.compiler.target>
     <cdk.version>1.152.0</cdk.version>
     <spotless.version>2.21.0</spotless.version>
-    <maven.compiler.source>1.7</maven.compiler.source>
+    <maven.compiler.source>1.8</maven.compiler.source>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jcommander.version>1.78</jcommander.version>
     <junit.version>5.7.1</junit.version>
