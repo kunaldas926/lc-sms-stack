@@ -55,18 +55,22 @@ public class LcSmsStack extends Stack {
 
 		// create lambda, roles and permissions
 		PolicyStatement statement1 = PolicyStatement.Builder.create().effect(Effect.ALLOW)
-				.actions(Arrays.asList(
-						new String[] { "sqs:ListQueues", "sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage",
-								"sqs:GetQueueAttributes", "sqs:ChangeMessageVisibility", "sqs:GetQueueUrl" }))
-				.resources(Arrays.asList(new String[] { "*" })).build();
+				.actions(Arrays.asList("sqs:ListQueues", "sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage",
+								"sqs:GetQueueAttributes", "sqs:ChangeMessageVisibility", "sqs:GetQueueUrl"))
+				.resources(Arrays.asList( "*" )).build();
 
 		PolicyStatement statement2 = PolicyStatement.Builder.create().effect(Effect.ALLOW)
 				.actions(Arrays
-						.asList(new String[] { "logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents" }))
-				.resources(Arrays.asList(new String[] { "arn:aws:logs:*:*:*" })).build();
+						.asList("logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents" ))
+				.resources(Arrays.asList("arn:aws:logs:*:*:*" )).build();
 
 		PolicyStatement statement3 = PolicyStatement.Builder.create().effect(Effect.ALLOW)
-				.actions(Arrays.asList(new String[] { "kms:Decrypt" })).resources(Arrays.asList(new String[] { "*" }))
+				.actions(Arrays.asList("kms:Decrypt",
+						"ec2:DescribeNetworkInterfaces",
+				        "ec2:CreateNetworkInterface",
+				        "ec2:DescribeInstances",
+				        "ec2:AttachNetworkInterface"
+				)).resources(Arrays.asList( "*" ))
 				.build();
 
 		PolicyDocument policyDocument = PolicyDocument.Builder.create()
