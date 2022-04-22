@@ -29,7 +29,7 @@ def deployCdk() {
     echo "Stack deployment starting..."
     // TODO: Mention version here
     sh "npm install -g aws-cdk@latest"
-    sh "cdk synth --require-approval=never --app='java -jar ./target/sms-stack-0.0.1-SNAPSHOT.jar \
+    sh "cdk deploy --require-approval=never --app='java -jar ./target/sms-stack-0.0.1-SNAPSHOT.jar \
 			-profile ${params.PROFILE} \
 			-lm_troux_uid ${params.TROUX_UID} \
 			-program ${params.PROGRAM}'"
@@ -47,7 +47,7 @@ node('linux') {
     
 	stage ("deploy") {
         withAWS(
-        credentials: getAWSCredentialID(environment: "dev"),
+        credentials: getAWSCredentialID(environment: ${params.PROFILE}),
         region: getAWSRegion()) {
     		deployCdk()
     	}
