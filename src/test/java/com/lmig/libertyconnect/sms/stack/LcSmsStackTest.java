@@ -14,11 +14,11 @@ import com.lmig.libertyconnect.sms.stack.LcSmsStackApp.Args;
 
 import software.amazon.awscdk.core.App;
 
-class LcSmsStackTest {
+public class LcSmsStackTest {
 	private final static ObjectMapper JSON = new ObjectMapper().configure(SerializationFeature.INDENT_OUTPUT, true);
 
 	@Test
-	void testStack() throws IOException {
+	public void testStack() throws IOException {
 		Args ARGS = Args.builder().program("test").profile("local").build();
 
 		App app = new App();
@@ -28,6 +28,7 @@ class LcSmsStackTest {
 
 		assertTrue(actual.toString().contains("AWS::SQS::Queue"));
 		assertTrue(actual.toString().contains("AWS::Lambda::Function"));
+		assertTrue(actual.toString().contains("AWS::ApiGateway::RestApi"));
 
 	}
 }
