@@ -1,4 +1,4 @@
-package com.lmig.libertyconnect.sms.stack; 
+package com.lmig.libertyconnect.sms.stack;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,6 +17,9 @@ import software.amazon.awscdk.services.apigateway.LambdaIntegration;
 import software.amazon.awscdk.services.apigateway.Resource;
 import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.apigateway.StageOptions;
+import software.amazon.awscdk.services.ec2.SecurityGroup;
+import software.amazon.awscdk.services.ec2.Vpc;
+import software.amazon.awscdk.services.ec2.VpcAttributes;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyDocument;
 import software.amazon.awscdk.services.iam.PolicyStatement;
@@ -83,10 +86,17 @@ public class LcSmsStack extends Stack {
 						ARGS.getProcessorLambdaS3Key()))
 				.handler("com.lmig.libertyconnect.sms.processor.handler.LambdaHandler").role(lambdaRole)
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(5)).events(eventSources).build();
-
+		
+	
 		final Function smsConnectorLambda = Function.Builder.create(this, ARGS.getPrefixedName("lc-sms-connector-lambda"))
 				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-connector", ARGS.getPrefixedName("lc-sms")),
 						ARGS.getConnectorLambdaS3Key()))
+				.vpc(Vpc.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-vps"), VpcAttributes.builder()
+						.vpcId("vpc-6d3d8b0a")
+						.availabilityZones(List.of("ap-southeast-1a", "ap-southeast-1b"))
+						.privateSubnetIds(List.of("subnet-3a076f73", "subnet-1a641c7d"))
+						.build()))
+				.securityGroups(List.of(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-sg"), "sg-018a679bf5214b799")))
 				.functionName(ARGS.getPrefixedName("lc-sms-connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler").role(lambdaRole)
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(5)).build();
@@ -134,5 +144,4 @@ public class LcSmsStack extends Stack {
 		
 	}
 
-	
 }

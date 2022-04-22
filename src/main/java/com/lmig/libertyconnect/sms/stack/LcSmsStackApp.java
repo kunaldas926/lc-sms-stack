@@ -53,21 +53,21 @@ public final class LcSmsStackApp {
         @Parameter(
             names = {"-lm_troux_uid"},
             description = "Required: tag lm_troux_uid",
-            required = false          
+            required = true          
         )
         private String lmTrouxUid;  
         
         @Parameter(
                 names = {"-connectorLambdaS3Key"},
                 description = "Required: bucket key for connector Lambda",
-                required = false          
+                required = true          
         )
         private String connectorLambdaS3Key;
         
         @Parameter(
                 names = {"-processorLambdaS3Key"},
                 description = "Required: bucket key for processor Lambda",
-                required = false          
+                required = true          
         )
         private String processorLambdaS3Key;  
         
