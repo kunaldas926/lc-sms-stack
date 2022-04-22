@@ -46,7 +46,7 @@ node('linux') {
     }
     
 	stage ("deploy") {
-	def env = ${params.PROFILE}
+	def env = params.PROFILE
         withAWS(
         credentials: getAWSCredentialID(environment: env),
         region: getAWSRegion()) {
