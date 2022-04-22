@@ -93,10 +93,10 @@ public class LcSmsStack extends Stack {
 						ARGS.getConnectorLambdaS3Key()))
 				.vpc(Vpc.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-vps"), VpcAttributes.builder()
 						.vpcId("vpc-6d3d8b0a")
-						.availabilityZones(List.of("ap-southeast-1a", "ap-southeast-1b"))
-						.privateSubnetIds(List.of("subnet-3a076f73", "subnet-1a641c7d"))
+						.availabilityZones(Arrays.asList("ap-southeast-1a", "ap-southeast-1b"))
+						.privateSubnetIds(Arrays.asList("subnet-3a076f73", "subnet-1a641c7d"))
 						.build()))
-				.securityGroups(List.of(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-sg"), "sg-018a679bf5214b799")))
+				.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-sg"), "sg-018a679bf5214b799")))
 				.functionName(ARGS.getPrefixedName("lc-sms-connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler").role(lambdaRole)
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(5)).build();
