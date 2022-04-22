@@ -21,6 +21,18 @@ properties([
             defaultValue: "7CFD56E9-332A-40F7-8A24-557EF0BFC796",
             description: 'lm_troux_uid',
             name: 'TROUX_UID'          
+        ),
+        
+        string(
+            defaultValue: "code/lc-sms-connector-lambda-0.0.1-SNAPSHOT.jar",
+            description: 'bucket key for lambda jar',
+            name: 'CONNECTOR_LAMBDA_S3_KEY'          
+        ),
+        
+        string(
+            defaultValue: "code/sms-processor-0.0.1-SNAPSHOT.jar",
+            description: 'bucket key for lambda jar',
+            name: 'PROCESSOR_LAMBDA_S3_KEY'          
         )
     ])
 ])
@@ -32,7 +44,9 @@ def deployCdk() {
     sh "cdk deploy --require-approval=never --app='java -jar ./target/sms-stack-0.0.1-SNAPSHOT.jar \
 			-profile ${params.PROFILE} \
 			-lm_troux_uid ${params.TROUX_UID} \
-			-program ${params.PROGRAM}'"
+			-program ${params.PROGRAM} \
+			-connectorLambdaS3Key ${params.CONNECTOR_LAMBDA_S3_KEY} \
+			-processorLambdaS3Key ${params.PROCESSOR_LAMBDA_S3_KEY}'"
     echo "Stack deployment finished!"
 }
 

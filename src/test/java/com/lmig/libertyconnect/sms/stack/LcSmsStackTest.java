@@ -19,7 +19,9 @@ public class LcSmsStackTest {
 
 	@Test
 	public void testStack() throws IOException {
-		Args ARGS = Args.builder().program("test").profile("local").build();
+		Args ARGS = Args.builder().program("test").profile("local")
+				.processorLambdaS3Key("code/sms-processor-0.0.1-SNAPSHOT.jar")
+				.connectorLambdaS3Key("code/sms-connector-0.0.1-SNAPSHOT.jar").build();
 
 		App app = new App();
 		LcSmsStack stack = new LcSmsStack(app, ARGS.getPrefixedName("lc-sms"), null, ARGS);

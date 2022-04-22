@@ -38,7 +38,7 @@ public final class LcSmsStackApp {
 
         @Parameter(
             names = {"-program"},
-            description = "Required: Profile to run",
+            description = "Required: Program",
             required = true
         )
         public String program;
@@ -55,7 +55,21 @@ public final class LcSmsStackApp {
             description = "Required: tag lm_troux_uid",
             required = false          
         )
-        private String lmTrouxUid;       
+        private String lmTrouxUid;  
+        
+        @Parameter(
+                names = {"-connectorLambdaS3Key"},
+                description = "Required: bucket key for connector Lambda",
+                required = false          
+        )
+        private String connectorLambdaS3Key;
+        
+        @Parameter(
+                names = {"-processorLambdaS3Key"},
+                description = "Required: bucket key for processor Lambda",
+                required = false          
+        )
+        private String processorLambdaS3Key;  
         
     	public String getPrefixedName(final String name) {
     		return String.format("%s%s%s%s%s", this.program, "-", this.profile, "-", name);
