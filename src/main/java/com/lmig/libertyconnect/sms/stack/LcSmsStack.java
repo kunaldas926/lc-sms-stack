@@ -66,6 +66,7 @@ public class LcSmsStack extends Stack {
 
 		PolicyStatement statement3 = PolicyStatement.Builder.create().effect(Effect.ALLOW)
 				.actions(Arrays.asList("kms:Decrypt",
+						"kms:GenerateDataKey",
 						"ec2:DescribeNetworkInterfaces",
 				        "ec2:CreateNetworkInterface",
 				        "ec2:DeleteNetworkInterface",
