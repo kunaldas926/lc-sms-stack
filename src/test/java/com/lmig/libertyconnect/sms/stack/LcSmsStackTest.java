@@ -6,9 +6,11 @@ import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
+import com.beust.jcommander.JCommander;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.lmig.libertyconnect.sms.stack.LcSmsStackApp.Args;
 
 import software.amazon.awscdk.core.App;
 
@@ -17,8 +19,10 @@ class LcSmsStackTest {
 
 	@Test
 	void testStack() throws IOException {
+		Args ARGS = Args.builder().program("test").profile("local").build();
+
 		App app = new App();
-		LcSmsStack stack = new LcSmsStack(app, "test");
+		LcSmsStack stack = new LcSmsStack(app, ARGS.getPrefixedName("lc-sms"), null, ARGS);
 
 		JsonNode actual = JSON.valueToTree(app.synth().getStackArtifact(stack.getArtifactId()).getTemplate());
 

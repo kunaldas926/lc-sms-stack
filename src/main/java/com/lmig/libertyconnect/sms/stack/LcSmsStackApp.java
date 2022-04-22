@@ -2,8 +2,12 @@ package com.lmig.libertyconnect.sms.stack;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.lmig.libertyconnect.sms.stack.LcSmsStackApp.Args;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import software.amazon.awscdk.core.App;
 import software.amazon.awscdk.core.Tags;
 
@@ -14,9 +18,9 @@ public final class LcSmsStackApp {
 	public static void main(final String[] args) {
 		JCommander.newBuilder().addObject(ARGS).build().parse(args);
 		App app = new App();
-		final String stackName = "test-reg-dev-lc-sms-stack";
+		final String stackName = ARGS.getPrefixedName("lc-sms-stack");
 		addTags(app, stackName);
-		new LcSmsStack(app, stackName);
+		new LcSmsStack(app, stackName, null, ARGS);
 
 		app.synth();
 	}
@@ -25,8 +29,11 @@ public final class LcSmsStackApp {
 		// 7CFD56E9-332A-40F7-8A24-557EF0BFC796
 		Tags.of(app).add("lm_troux_uid", ARGS.getLmTrouxUid());
 	}
-	
+		
     @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class Args {
 
         @Parameter(
@@ -49,5 +56,9 @@ public final class LcSmsStackApp {
             required = false          
         )
         private String lmTrouxUid;       
+        
+    	public String getPrefixedName(final String name) {
+    		return String.format("%s%s%s%s%s", this.program, "-", this.profile, "-", name);
+    	}
     }
 }
