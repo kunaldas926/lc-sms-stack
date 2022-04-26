@@ -36,6 +36,7 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.amazon.awscdk.services.sqs.QueueEncryption;
 import software.amazon.awscdk.services.ssm.StringParameter;
+import software.amazon.awscdk.services.ssm.StringParameterProps;
 
 public class LcSmsStack extends Stack {
 
@@ -57,17 +58,17 @@ public class LcSmsStack extends Stack {
 				.build();
 
 		// create lambda, roles and permissions
-		PolicyStatement statement1 = PolicyStatement.Builder.create().effect(Effect.ALLOW)
+		final PolicyStatement statement1 = PolicyStatement.Builder.create().effect(Effect.ALLOW)
 				.actions(Arrays.asList("sqs:ListQueues", "sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage",
 								"sqs:GetQueueAttributes", "sqs:ChangeMessageVisibility", "sqs:GetQueueUrl"))
 				.resources(Arrays.asList( "*" )).build();
 
-		PolicyStatement statement2 = PolicyStatement.Builder.create().effect(Effect.ALLOW)
+		final PolicyStatement statement2 = PolicyStatement.Builder.create().effect(Effect.ALLOW)
 				.actions(Arrays
 						.asList("logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents" ))
 				.resources(Arrays.asList("arn:aws:logs:*:*:*" )).build();
 
-		PolicyStatement statement3 = PolicyStatement.Builder.create().effect(Effect.ALLOW)
+		final PolicyStatement statement3 = PolicyStatement.Builder.create().effect(Effect.ALLOW)
 				.actions(Arrays.asList("kms:Decrypt",
 						"kms:GenerateDataKey",
 						"ec2:DescribeNetworkInterfaces",
@@ -78,15 +79,15 @@ public class LcSmsStack extends Stack {
 				)).resources(Arrays.asList( "*" ))
 				.build();
 
-		PolicyDocument policyDocument = PolicyDocument.Builder.create()
-				.statements(Arrays.asList(new PolicyStatement[] { statement1, statement2, statement3 })).build();
+		final PolicyDocument policyDocument = PolicyDocument.Builder.create()
+				.statements(Arrays.asList(statement1, statement2, statement3)).build();
 
 		Role lambdaRole = Role.Builder.create(this, ARGS.getPrefixedName("lc-lambda-role"))
 				.roleName(ARGS.getPrefixedName("lc-lambda-role"))
 				.inlinePolicies(Collections.singletonMap(ARGS.getPrefixedName("lc-sqsS3-policy"), policyDocument)).path("/")
 				.assumedBy(new ServicePrincipal("lambda.amazonaws.com")).build();
 
-		List<IEventSource> eventSources = new ArrayList<>();
+		final List<IEventSource> eventSources = new ArrayList<>();
 		eventSources.add(SqsEventSource.Builder.create(queue).batchSize(1).enabled(true).build());
 
 		final Function smsProcessorLambda = Function.Builder.create(this, ARGS.getPrefixedName("lc-sms-processor-lambda"))
@@ -112,27 +113,27 @@ public class LcSmsStack extends Stack {
 	
 		// Create SSM parameter for vietguys
 		StringParameter vietGuysparam = StringParameter.Builder.create(this, ARGS.getPrefixedName("lc-sms-vietguys-ssm"))
-				 .parameterName("lc-sms-vietguys-cred")
+				 .parameterName(ARGS.getPrefixedName("lc-sms-vietguys-cred"))
 		         .stringValue(new String(Base64.encodeBase64(ARGS.getVietguyPass().getBytes())))
 		         .build();
-		 vietGuysparam.grantRead(lambdaRole);
-		 
+		vietGuysparam.grantRead(lambdaRole);
+
 		// Create SSM parameter for dtac
 		StringParameter dtacParam = StringParameter.Builder.create(this, ARGS.getPrefixedName("lc-sms-dtac-ssm"))
-				 .parameterName("lc-sms-dtac-cred")
+				 .parameterName(ARGS.getPrefixedName("lc-sms-dtac-cred"))
 		         .stringValue(new String(Base64.encodeBase64(ARGS.getDtacPass().getBytes())))
 		         .build();
 		dtacParam.grantRead(lambdaRole);
 		 
 		// Create Rest API Gateway
-		PolicyStatement apiStatement = PolicyStatement.Builder.create().effect(Effect.ALLOW)
-				.actions(Arrays.asList(new String[] { "execute-api:Invoke" }))
-				.resources(Arrays.asList(new String[] { "*" }))
+		final PolicyStatement apiStatement = PolicyStatement.Builder.create().effect(Effect.ALLOW)
+				.actions(Arrays.asList("execute-api:Invoke"))
+				.resources(Arrays.asList( "*" ))
 				.build();
 		apiStatement.addAnyPrincipal();
 
-		PolicyDocument apiPolicyDocument = PolicyDocument.Builder.create()
-				.statements(Arrays.asList(new PolicyStatement[] { apiStatement })).build();
+		final PolicyDocument apiPolicyDocument = PolicyDocument.Builder.create()
+				.statements(Arrays.asList(apiStatement)).build();
 
 		final RestApi api =
 		        RestApi.Builder.create(this, ARGS.getPrefixedName("lc-sms-gateway"))	        

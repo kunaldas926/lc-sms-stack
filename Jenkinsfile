@@ -4,13 +4,6 @@ import com.lmig.intl.cloud.jenkins.util.EnvConfigUtil
 
 properties([
     parameters([
-        choice(
-            defaultValue: "dev",
-            description: 'Env dev|nonprod|prod - used to determine which environment to use for deployment',
-            name: 'PROFILE',
-            choices: ["dev", "nonprod", "prod"].join("\n")
-        ),
-
         string(
             defaultValue: "reg",
             description: 'PROGRAM - used to determine which program to use for deployment',
@@ -47,12 +40,17 @@ properties([
     ])
 ])
 
-def deployCdk() {
+static def getEnvFromBuildPath(jobPath) {
+    def directories = jobPath.split('/')
+    return directories[-3]
+}
+
+def deployCdk(currentEnv) {
     echo "Stack deployment starting..."
     // TODO: Mention version here
     sh "npm install -g aws-cdk@latest"
     sh "cdk deploy --require-approval=never --app='java -jar ./target/sms-stack-0.0.1-SNAPSHOT.jar \
-			-profile ${params.PROFILE} \
+			-profile ${currentEnv} \
 			-lm_troux_uid ${params.TROUX_UID} \
 			-program ${params.PROGRAM} \
 			-connectorLambdaS3Key ${params.CONNECTOR_LAMBDA_S3_KEY} \
@@ -72,11 +70,11 @@ node('linux') {
     }
     
 	stage ("deploy") {
-	def env = params.PROFILE
+	def currentEnv = getEnvFromBuildPath(env.JOB_NAME)
         withAWS(
-        credentials: getAWSCredentialID(environment: env),
+        credentials: getAWSCredentialID(environment: currentEnv),
         region: getAWSRegion()) {
-    		deployCdk()
+    		deployCdk(currentEnv)
     	}
 	}
 }
