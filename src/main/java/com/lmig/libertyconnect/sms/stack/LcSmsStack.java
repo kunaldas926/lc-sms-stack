@@ -42,13 +42,8 @@ public class LcSmsStack extends Stack {
 
 	public LcSmsStack(final Construct parent, final String id, final StackProps props, final Args ARGS) {
 		super(parent, id, props);
-		/*
-		 * final Key stackKey = Key.Builder.create(parent,
-		 * getPrefixedName("lc-sms-key")) .enableKeyRotation(true)
-		 * .policy(getPolicyDocument()) .build();
-		 */
 
-		// stackKey.addAlias(getPrefixedName("lc-sms-key"));
+		// create queue
 		final String queueName = ARGS.getPrefixedName("lc-sms-queue.fifo");
 		final Queue queue = Queue.Builder.create(this, queueName).queueName(queueName)
 				.retentionPeriod(Duration.days(14))
