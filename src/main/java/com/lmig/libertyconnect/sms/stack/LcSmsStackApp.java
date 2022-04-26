@@ -69,7 +69,21 @@ public final class LcSmsStackApp {
                 description = "Required: bucket key for processor Lambda",
                 required = true          
         )
-        private String processorLambdaS3Key;  
+        private String processorLambdaS3Key; 
+        
+        @Parameter(
+                names = {"-vietguyPass"},
+                description = "Required: vietguys credential",
+                required = true          
+        )
+        private String vietguyPass; 
+        
+        @Parameter(
+                names = {"-dtacPass"},
+                description = "Required: dtac credential",
+                required = true          
+        )
+        private String dtacPass; 
         
     	public String getPrefixedName(final String name) {
     		return String.format("%s%s%s%s%s", this.program, "-", this.profile, "-", name);

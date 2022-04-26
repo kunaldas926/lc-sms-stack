@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.codec.binary.Base64;
+
 import com.lmig.libertyconnect.sms.stack.LcSmsStackApp.Args;
 
 import software.amazon.awscdk.core.Construct;
@@ -33,6 +35,7 @@ import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.amazon.awscdk.services.sqs.QueueEncryption;
+import software.amazon.awscdk.services.ssm.StringParameter;
 
 public class LcSmsStack extends Stack {
 
@@ -106,21 +109,22 @@ public class LcSmsStack extends Stack {
 				.functionName(ARGS.getPrefixedName("lc-sms-connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler").role(lambdaRole)
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(5)).build();
-
-		
-		// Defines an API Gateway REST API resource backed by our "connector" function
-		
-		/*
-		 * LambdaRestApi api = LambdaRestApi.Builder.create(this,
-		 * getPrefixedName("lc-sms-gateway"))
-		 * .restApiName(getPrefixedName("lc-sms-api")) .cloudWatchRole(false)
-		 * .endpointTypes(Arrays.asList(EndpointType.PRIVATE)) .defaultIntegration(
-		 * 
-		 * .type(IntegrationType.AWS_PROXY) .build()) .handler(smsConnectorLambda)
-		 * .build();
-		 */
-		 
 	
+		// Create SSM parameter for vietguys
+		StringParameter vietGuysparam = StringParameter.Builder.create(this, ARGS.getPrefixedName("lc-sms-vietguys-ssm"))
+				 .parameterName("lc-sms-vietguys-cred")
+		         .stringValue(new String(Base64.encodeBase64(ARGS.getVietguyPass().getBytes())))
+		         .build();
+		 vietGuysparam.grantRead(lambdaRole);
+		 
+		// Create SSM parameter for dtac
+		StringParameter dtacParam = StringParameter.Builder.create(this, ARGS.getPrefixedName("lc-sms-dtac-ssm"))
+				 .parameterName("lc-sms-dtac-cred")
+		         .stringValue(new String(Base64.encodeBase64(ARGS.getDtacPass().getBytes())))
+		         .build();
+		dtacParam.grantRead(lambdaRole);
+		 
+		// Create Rest API Gateway
 		PolicyStatement apiStatement = PolicyStatement.Builder.create().effect(Effect.ALLOW)
 				.actions(Arrays.asList(new String[] { "execute-api:Invoke" }))
 				.resources(Arrays.asList(new String[] { "*" }))

@@ -33,6 +33,16 @@ properties([
             defaultValue: "code/sms-processor-0.0.1-SNAPSHOT.jar",
             description: 'bucket key for lambda jar',
             name: 'PROCESSOR_LAMBDA_S3_KEY'          
+        ),
+        
+        string(
+            description: 'vietguys credential',
+            name: 'VIETGUYS_PASS'          
+        ),
+        
+        string(
+            description: 'dtac credential',
+            name: 'DTAC_PASS'          
         )
     ])
 ])
@@ -46,7 +56,9 @@ def deployCdk() {
 			-lm_troux_uid ${params.TROUX_UID} \
 			-program ${params.PROGRAM} \
 			-connectorLambdaS3Key ${params.CONNECTOR_LAMBDA_S3_KEY} \
-			-processorLambdaS3Key ${params.PROCESSOR_LAMBDA_S3_KEY}'"
+			-processorLambdaS3Key ${params.PROCESSOR_LAMBDA_S3_KEY} \
+			-vietguyPass ${params.VIETGUYS_PASS} \
+			-dtacPass ${params.DTAC_PASS}'"
     echo "Stack deployment finished!"
 }
 
