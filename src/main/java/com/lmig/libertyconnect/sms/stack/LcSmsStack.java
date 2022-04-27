@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
 
@@ -89,6 +90,7 @@ public class LcSmsStack extends Stack {
 				.functionName(ARGS.getPrefixedName("lc-sms-processor-lambda"))
 				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-processor", ARGS.getPrefixedName("lc-sms")),
 						ARGS.getProcessorLambdaS3Key()))
+				.environment(Map.of("PROGRAM", ARGS.program,"ENV", ARGS.getProfile()))
 				.handler("com.lmig.libertyconnect.sms.processor.handler.LambdaHandler").role(lambdaRole)
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(5)).events(eventSources).build();
 		
@@ -96,6 +98,7 @@ public class LcSmsStack extends Stack {
 		final Function smsConnectorLambda = Function.Builder.create(this, ARGS.getPrefixedName("lc-sms-connector-lambda"))
 				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-connector", ARGS.getPrefixedName("lc-sms")),
 						ARGS.getConnectorLambdaS3Key()))
+				.environment(Map.of("PROGRAM", ARGS.program,"ENV", ARGS.getProfile()))
 				.vpc(Vpc.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-vps"), VpcAttributes.builder()
 						.vpcId("vpc-6d3d8b0a")
 						.availabilityZones(Arrays.asList("ap-southeast-1a", "ap-southeast-1b"))
