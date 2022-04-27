@@ -3,6 +3,7 @@ package com.lmig.libertyconnect.sms.stack;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -86,11 +87,15 @@ public class LcSmsStack extends Stack {
 		final List<IEventSource> eventSources = new ArrayList<>();
 		eventSources.add(SqsEventSource.Builder.create(queue).batchSize(1).enabled(true).build());
 
+		final Map<String, String> envsMap = new HashMap<>();
+		envsMap.put("PROGRAM", ARGS.program);
+		envsMap.put("ENV", ARGS.getProfile());
+		
 		final Function smsProcessorLambda = Function.Builder.create(this, ARGS.getPrefixedName("lc-sms-processor-lambda"))
 				.functionName(ARGS.getPrefixedName("lc-sms-processor-lambda"))
 				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-processor", ARGS.getPrefixedName("lc-sms")),
 						ARGS.getProcessorLambdaS3Key()))
-				.environment(Map.of("PROGRAM", ARGS.program,"ENV", ARGS.getProfile()))
+				.environment(envsMap)
 				.handler("com.lmig.libertyconnect.sms.processor.handler.LambdaHandler").role(lambdaRole)
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(5)).events(eventSources).build();
 		
@@ -98,7 +103,7 @@ public class LcSmsStack extends Stack {
 		final Function smsConnectorLambda = Function.Builder.create(this, ARGS.getPrefixedName("lc-sms-connector-lambda"))
 				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-connector", ARGS.getPrefixedName("lc-sms")),
 						ARGS.getConnectorLambdaS3Key()))
-				.environment(Map.of("PROGRAM", ARGS.program,"ENV", ARGS.getProfile()))
+				.environment(envsMap)
 				.vpc(Vpc.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-vps"), VpcAttributes.builder()
 						.vpcId("vpc-6d3d8b0a")
 						.availabilityZones(Arrays.asList("ap-southeast-1a", "ap-southeast-1b"))
