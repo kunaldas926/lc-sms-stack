@@ -72,7 +72,8 @@ public class LcSmsStack extends Stack {
 				        "ec2:CreateNetworkInterface",
 				        "ec2:DeleteNetworkInterface",
 				        "ec2:DescribeInstances",
-				        "ec2:AttachNetworkInterface"
+				        "ec2:AttachNetworkInterface",
+				        "states:StartExecution"
 				)).resources(Arrays.asList( "*" ))
 				.build();
 
