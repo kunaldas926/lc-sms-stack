@@ -26,7 +26,6 @@ public final class LcSmsStackApp {
 	}
 
 	public static void addTags(App app, final String stackName) {
-		// 7CFD56E9-332A-40F7-8A24-557EF0BFC796
 		Tags.of(app).add("lm_troux_uid", ARGS.getLmTrouxUid());
 	}
 		
@@ -67,9 +66,16 @@ public final class LcSmsStackApp {
         @Parameter(
                 names = {"-processorLambdaS3Key"},
                 description = "Required: bucket key for processor Lambda",
+                required = true
+        )
+        private String processorLambdaS3Key;
+        
+        @Parameter(
+                names = {"-dbConnectorLambdaS3Key"},
+                description = "Required: bucket key for processor Lambda",
                 required = true          
         )
-        private String processorLambdaS3Key; 
+        private String dbConnectorLambdaS3Key;
         
         @Parameter(
                 names = {"-vietguyPass"},
@@ -83,7 +89,7 @@ public final class LcSmsStackApp {
                 description = "Required: dtac credential",
                 required = true          
         )
-        private String dtacPass; 
+        private String dtacPass;
         
     	public String getPrefixedName(final String name) {
     		return String.format("%s%s%s%s%s", this.program, "-", this.profile, "-", name);

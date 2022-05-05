@@ -38,7 +38,8 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.amazon.awscdk.services.sqs.QueueEncryption;
 import software.amazon.awscdk.services.ssm.StringParameter;
-import software.amazon.awscdk.services.ssm.StringParameterProps;
+import software.amazon.awscdk.services.stepfunctions.StateMachine;
+import software.amazon.awscdk.services.stepfunctions.tasks.LambdaInvoke;
 
 public class LcSmsStack extends Stack {
 
@@ -58,7 +59,7 @@ public class LcSmsStack extends Stack {
 		final PolicyStatement statement1 = PolicyStatement.Builder.create().effect(Effect.ALLOW)
 				.actions(Arrays.asList("sqs:ListQueues", "sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage",
 								"sqs:GetQueueAttributes", "sqs:ChangeMessageVisibility", "sqs:GetQueueUrl"))
-				.resources(Arrays.asList( "*" )).build();
+				.resources(Arrays.asList( queue.getQueueArn())).build();
 
 		final PolicyStatement statement2 = PolicyStatement.Builder.create().effect(Effect.ALLOW)
 				.actions(Arrays
@@ -105,16 +106,38 @@ public class LcSmsStack extends Stack {
 				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-connector", ARGS.getPrefixedName("lc-sms")),
 						ARGS.getConnectorLambdaS3Key()))
 				.environment(envsMap)
-				.vpc(Vpc.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-vps"), VpcAttributes.builder()
+				.vpc(Vpc.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-connector-vpc"), VpcAttributes.builder()
 						.vpcId("vpc-6d3d8b0a")
 						.availabilityZones(Arrays.asList("ap-southeast-1a", "ap-southeast-1b"))
 						.privateSubnetIds(Arrays.asList("subnet-3a076f73", "subnet-1a641c7d"))
 						.build()))
-				.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-sg"), "sg-018a679bf5214b799")))
+				.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-connector-sg"), "sg-018a679bf5214b799")))
 				.functionName(ARGS.getPrefixedName("lc-sms-connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler").role(lambdaRole)
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(5)).build();
 	
+		final Function smsDbConnectorLmbda = Function.Builder.create(this, ARGS.getPrefixedName("lc-sms-db-connector-lambda"))
+				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-db-connector", ARGS.getPrefixedName("lc-sms")),
+						ARGS.getDbConnectorLambdaS3Key()))
+				.environment(envsMap)
+				.vpc(Vpc.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-db-connector-vpc"), VpcAttributes.builder()
+						.vpcId("vpc-6d3d8b0a")
+						.availabilityZones(Arrays.asList("ap-southeast-1a", "ap-southeast-1b"))
+						.privateSubnetIds(Arrays.asList("subnet-3a076f73", "subnet-1a641c7d"))
+						.build()))
+				.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-db-connector-sg"), "sg-018a679bf5214b799")))
+				.functionName(ARGS.getPrefixedName("lc-sms-db-connector-lambda"))
+				.handler("com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler").role(lambdaRole)
+				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(15)).build();
+		
+		// Create step function to invoke dbConnector Lambda
+		final StateMachine stateMachine = StateMachine.Builder.create(this, ARGS.getPrefixedName("lc-sms-statemachine"))
+				.stateMachineName(ARGS.getPrefixedName("lc-sms-statemachine"))
+		        .definition(LambdaInvoke.Builder.create(this, ARGS.getPrefixedName("lc-sms-db-connector-lambda-task"))
+		            .lambdaFunction(smsDbConnectorLmbda)
+		            .build())
+		        .build();
+		
 		// Create SSM parameter for vietguys
 		StringParameter vietGuysparam = StringParameter.Builder.create(this, ARGS.getPrefixedName("lc-sms-vietguys-ssm"))
 				 .parameterName(ARGS.getPrefixedName("lc-sms-vietguys-cred"))

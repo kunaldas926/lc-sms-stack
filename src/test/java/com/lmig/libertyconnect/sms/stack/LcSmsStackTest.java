@@ -22,6 +22,7 @@ public class LcSmsStackTest {
 		Args ARGS = Args.builder().program("test").profile("local")
 				.processorLambdaS3Key("code/sms-processor-0.0.1-SNAPSHOT.jar")
 				.connectorLambdaS3Key("code/sms-connector-0.0.1-SNAPSHOT.jar")
+				.dbConnectorLambdaS3Key("code/sms-db-connector-0.0.1-SNAPSHOT.jar")
 				.dtacPass("dummy")
 				.vietguyPass("dummy")
 				.build();

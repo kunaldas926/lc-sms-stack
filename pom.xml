@@ -27,14 +27,24 @@
 		<!-- AWS Cloud Development Kit -->
 		<dependency>
 			<groupId>software.amazon.awscdk</groupId>
-			<artifactId>core</artifactId>
-			<version>${cdk.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>software.amazon.awscdk</groupId>
 			<artifactId>sqs</artifactId>
 			<version>${cdk.version}</version>
 		</dependency>
+        <dependency>
+            <groupId>software.amazon.awscdk</groupId>
+            <artifactId>stepfunctions</artifactId>
+            <version>${cdk.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awscdk</groupId>
+            <artifactId>stepfunctions-tasks</artifactId>
+            <version>${cdk.version}</version>
+        </dependency>
+         <dependency>
+            <groupId>software.amazon.awscdk</groupId>
+            <artifactId>lambda</artifactId>
+            <version>${cdk.version}</version>
+        </dependency>
 		<dependency>
 			<groupId>software.amazon.awscdk</groupId>
 			<artifactId>s3</artifactId>
