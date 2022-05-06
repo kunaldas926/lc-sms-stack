@@ -29,7 +29,7 @@ properties([
         ),
         
         string(
-            defaultValue: "code/sms-processor-0.0.1-SNAPSHOT.jar",
+            defaultValue: "code/sms-db-connector-0.0.1-SNAPSHOT.jar",
             description: 'bucket key for lambda jar',
             name: 'DB_CONNECTOR_LAMBDA_S3_KEY'
         ),
