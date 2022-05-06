@@ -106,12 +106,12 @@ public class LcSmsStack extends Stack {
 				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-connector", ARGS.getPrefixedName("lc-sms")),
 						ARGS.getConnectorLambdaS3Key()))
 				.environment(envsMap)
-				.vpc(Vpc.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-connector-vpc"), VpcAttributes.builder()
+				/*.vpc(Vpc.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-connector-vpc"), VpcAttributes.builder()
 						.vpcId("vpc-6d3d8b0a")
 						.availabilityZones(Arrays.asList("ap-southeast-1a", "ap-southeast-1b"))
 						.privateSubnetIds(Arrays.asList("subnet-3a076f73", "subnet-1a641c7d"))
-						.build()))
-				.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-connector-sg"), "sg-018a679bf5214b799")))
+						.build()))*/
+				//.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-connector-sg"), "sg-018a679bf5214b799")))
 				.functionName(ARGS.getPrefixedName("lc-sms-connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler").role(lambdaRole)
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(5)).build();
@@ -120,12 +120,12 @@ public class LcSmsStack extends Stack {
 				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-db-connector", ARGS.getPrefixedName("lc-sms")),
 						ARGS.getDbConnectorLambdaS3Key()))
 				.environment(envsMap)
-				.vpc(Vpc.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-db-connector-vpc"), VpcAttributes.builder()
+				/*.vpc(Vpc.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-db-connector-vpc"), VpcAttributes.builder()
 						.vpcId("vpc-6d3d8b0a")
 						.availabilityZones(Arrays.asList("ap-southeast-1a", "ap-southeast-1b"))
 						.privateSubnetIds(Arrays.asList("subnet-3a076f73", "subnet-1a641c7d"))
-						.build()))
-				.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-db-connector-sg"), "sg-018a679bf5214b799")))
+						.build()))*/
+				//.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-db-connector-sg"), "sg-018a679bf5214b799")))
 				.functionName(ARGS.getPrefixedName("lc-sms-db-connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.updatedb.handler.SMSDBConnectorHandler::handleRequest").role(lambdaRole)
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(15)).build();
