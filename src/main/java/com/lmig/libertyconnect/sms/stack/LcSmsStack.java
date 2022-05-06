@@ -59,7 +59,7 @@ public class LcSmsStack extends Stack {
 		final PolicyStatement statement1 = PolicyStatement.Builder.create().effect(Effect.ALLOW)
 				.actions(Arrays.asList("sqs:ListQueues", "sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage",
 								"sqs:GetQueueAttributes", "sqs:ChangeMessageVisibility", "sqs:GetQueueUrl"))
-				.resources(Arrays.asList( queue.getQueueArn())).build();
+				.resources(Arrays.asList("*")).build();
 
 		final PolicyStatement statement2 = PolicyStatement.Builder.create().effect(Effect.ALLOW)
 				.actions(Arrays
