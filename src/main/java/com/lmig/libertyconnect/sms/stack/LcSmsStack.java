@@ -81,8 +81,8 @@ public class LcSmsStack extends Stack {
 		final PolicyDocument policyDocument = PolicyDocument.Builder.create()
 				.statements(Arrays.asList(statement1, statement2, statement3)).build();
 
-		Role lambdaRole = Role.Builder.create(this, ARGS.getPrefixedName("lc-lambda-role"))
-				.roleName(ARGS.getPrefixedName("lc-lambda-role"))
+		final Role lambdaRole = Role.Builder.create(this, ARGS.getPrefixedName("lc-sms-lambda-role"))
+				.roleName(ARGS.getPrefixedName("lc-sms-lambda-role"))
 				.inlinePolicies(Collections.singletonMap(ARGS.getPrefixedName("lc-sqsS3-policy"), policyDocument)).path("/")
 				.assumedBy(new ServicePrincipal("lambda.amazonaws.com")).build();
 
