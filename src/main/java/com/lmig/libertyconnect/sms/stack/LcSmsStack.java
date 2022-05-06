@@ -127,7 +127,7 @@ public class LcSmsStack extends Stack {
 						.build()))
 				.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-db-connector-sg"), "sg-018a679bf5214b799")))
 				.functionName(ARGS.getPrefixedName("lc-sms-db-connector-lambda"))
-				.handler("com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler").role(lambdaRole)
+				.handler("com.lmig.libertyconnect.sms.updatedb.handler.SMSDBConnectorHandler::handleRequest").role(lambdaRole)
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(15)).build();
 		
 		// Create step function to invoke dbConnector Lambda
