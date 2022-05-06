@@ -116,7 +116,7 @@ public class LcSmsStack extends Stack {
 				.handler("com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler").role(lambdaRole)
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(5)).build();
 	
-		/* final Function smsDbConnectorLmbda = Function.Builder.create(this, ARGS.getPrefixedName("lc-sms-db-connector-lambda"))
+		 final Function smsDbConnectorLmbda = Function.Builder.create(this, ARGS.getPrefixedName("lc-sms-db-connector-lambda"))
 				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-db-connector", ARGS.getPrefixedName("lc-sms")),
 						ARGS.getDbConnectorLambdaS3Key()))
 				.environment(envsMap)
@@ -137,7 +137,7 @@ public class LcSmsStack extends Stack {
 		            .lambdaFunction(smsDbConnectorLmbda)
 		            .build())
 		        .build();
-		*/
+		
 		// Create SSM parameter for vietguys
 		StringParameter vietGuysparam = StringParameter.Builder.create(this, ARGS.getPrefixedName("lc-sms-vietguys-ssm"))
 				 .parameterName(ARGS.getPrefixedName("lc-sms-vietguys-cred"))
