@@ -9,6 +9,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import software.amazon.awscdk.core.App;
+import software.amazon.awscdk.core.Environment;
+import software.amazon.awscdk.core.StackProps;
 import software.amazon.awscdk.core.Tags;
 
 public final class LcSmsStackApp {
@@ -20,7 +22,11 @@ public final class LcSmsStackApp {
 		App app = new App();
 		final String stackName = ARGS.getPrefixedName("lc-sms-stack");
 		addTags(app, stackName);
-		new LcSmsStack(app, stackName, null, ARGS);
+		new LcSmsStack(app, stackName, StackProps.builder()
+                .env(Environment.builder()
+                        .account("487353296903")
+                        .region("ap-southeast-1")
+                        .build()).build(), ARGS);
 
 		app.synth();
 	}

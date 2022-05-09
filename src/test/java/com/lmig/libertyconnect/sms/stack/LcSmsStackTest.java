@@ -1,4 +1,4 @@
-/*package com.lmig.libertyconnect.sms.stack;
+package com.lmig.libertyconnect.sms.stack;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -6,13 +6,14 @@ import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
-import com.beust.jcommander.JCommander;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.lmig.libertyconnect.sms.stack.LcSmsStackApp.Args;
 
 import software.amazon.awscdk.core.App;
+import software.amazon.awscdk.core.Environment;
+import software.amazon.awscdk.core.StackProps;
 
 public class LcSmsStackTest {
 	private final static ObjectMapper JSON = new ObjectMapper().configure(SerializationFeature.INDENT_OUTPUT, true);
@@ -28,7 +29,11 @@ public class LcSmsStackTest {
 				.build();
 
 		App app = new App();
-		LcSmsStack stack = new LcSmsStack(app, ARGS.getPrefixedName("lc-sms"), null, ARGS);
+		LcSmsStack stack = new LcSmsStack(app, ARGS.getPrefixedName("lc-sms"), StackProps.builder()
+                .env(Environment.builder()
+                        .account("01234567891011")
+                        .region("ap-southeast-1")
+                        .build()).build(), ARGS);
 
 		JsonNode actual = JSON.valueToTree(app.synth().getStackArtifact(stack.getArtifactId()).getTemplate());
 
@@ -38,4 +43,4 @@ public class LcSmsStackTest {
 		assertTrue(actual.toString().contains("AWS::SSM::Parameter"));
 
 	}
-}*/
+}
