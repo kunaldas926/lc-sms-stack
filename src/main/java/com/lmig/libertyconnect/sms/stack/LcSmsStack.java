@@ -107,7 +107,7 @@ public class LcSmsStack extends Stack {
 				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-connector", ARGS.getPrefixedName("lc-sms")),
 						ARGS.getConnectorLambdaS3Key()))
 				.environment(envsMap)
-				.vpc(Vpc.fromLookup(this, ARGS.getPrefixedName("lc-sms-connector-vpc"), VpcLookupOptions.builder().build()))
+				.vpc(Vpc.fromLookup(this, ARGS.getPrefixedName("lc-sms-connector-vpc"), VpcLookupOptions.builder().isDefault(false).build()))
 						/*.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-connector-vpc"), VpcAttributes.builder()
 						.vpcId("vpc-6d3d8b0a")
 						.availabilityZones(Arrays.asList("ap-southeast-1a", "ap-southeast-1b"))
@@ -127,7 +127,7 @@ public class LcSmsStack extends Stack {
 				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-db-connector", ARGS.getPrefixedName("lc-sms")),
 						ARGS.getDbConnectorLambdaS3Key()))
 				.environment(envsMap)
-				.vpc(Vpc.fromLookup(this, ARGS.getPrefixedName("lc-sms-db-connector-vpc"), VpcLookupOptions.builder().build()))
+				.vpc(Vpc.fromLookup(this, ARGS.getPrefixedName("lc-sms-db-connector-vpc"), VpcLookupOptions.builder().isDefault(false).build()))
 				/*.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-connector-vpc"), VpcAttributes.builder()
 				.vpcId("vpc-6d3d8b0a")
 				.availabilityZones(Arrays.asList("ap-southeast-1a", "ap-southeast-1b"))
