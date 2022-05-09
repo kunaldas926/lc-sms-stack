@@ -24,6 +24,7 @@ import software.amazon.awscdk.services.apigateway.StageOptions;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcAttributes;
+import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyDocument;
 import software.amazon.awscdk.services.iam.PolicyStatement;
@@ -106,25 +107,32 @@ public class LcSmsStack extends Stack {
 				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-connector", ARGS.getPrefixedName("lc-sms")),
 						ARGS.getConnectorLambdaS3Key()))
 				.environment(envsMap)
-				.vpc(Vpc.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-connector-vpc"), VpcAttributes.builder()
+				.vpc(Vpc.fromLookup(smsProcessorLambda, id, VpcLookupOptions.builder().build()))
+						/*.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-connector-vpc"), VpcAttributes.builder()
 						.vpcId("vpc-6d3d8b0a")
 						.availabilityZones(Arrays.asList("ap-southeast-1a", "ap-southeast-1b"))
 						.privateSubnetIds(Arrays.asList("subnet-ea5a228d", "subnet-bd056df4"))
-						.build()))
+						.build()))*/
 				.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-connector-sg"), "sg-0aab289f68432c664")))
 				.functionName(ARGS.getPrefixedName("lc-sms-connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler").role(lambdaRole)
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(5)).build();
 	
+		 envsMap.put("db_host", "intl-sg-apac-liberty-connect-rds-mysql-dev-dbproxy.proxy-cvluefal1end.ap-southeast-1.rds.amazonaws.com");
+		 envsMap.put("port", "3306");
+		 envsMap.put("secret_id", "apac-liberty-connect-rds-stack/mysql/intl-sg-apac-liberty-connect-rds-mysql-dev/libcdbuser/libconnnectdb22");
+		 envsMap.put("vpc_endpoint_url_ssm", "intl-cs-sm-vpc-endpoint-url");
+		 envsMap.put("db_name", "libertyconnect");
 		 final Function smsDbConnectorLmbda = Function.Builder.create(this, ARGS.getPrefixedName("lc-sms-db-connector-lambda"))
 				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-db-connector", ARGS.getPrefixedName("lc-sms")),
 						ARGS.getDbConnectorLambdaS3Key()))
 				.environment(envsMap)
-				.vpc(Vpc.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-db-connector-vpc"), VpcAttributes.builder()
-						.vpcId("vpc-6d3d8b0a")
-						.availabilityZones(Arrays.asList("ap-southeast-1a", "ap-southeast-1b"))
-						.privateSubnetIds(Arrays.asList("subnet-ea5a228d", "subnet-bd056df4"))
-						.build()))
+				.vpc(Vpc.fromLookup(smsProcessorLambda, id, VpcLookupOptions.builder().build()))
+				/*.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-connector-vpc"), VpcAttributes.builder()
+				.vpcId("vpc-6d3d8b0a")
+				.availabilityZones(Arrays.asList("ap-southeast-1a", "ap-southeast-1b"))
+				.privateSubnetIds(Arrays.asList("subnet-ea5a228d", "subnet-bd056df4"))
+				.build()))*/
 				.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-db-connector-sg"), "sg-0aab289f68432c664")))
 				.functionName(ARGS.getPrefixedName("lc-sms-db-connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.updatedb.handler.SMSDBConnectorHandler::handleRequest").role(lambdaRole)
