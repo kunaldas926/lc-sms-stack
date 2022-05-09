@@ -70,6 +70,7 @@ public class LcSmsStack extends Stack {
 		final PolicyStatement statement3 = PolicyStatement.Builder.create().effect(Effect.ALLOW)
 				.actions(Arrays.asList("kms:Decrypt",
 						"kms:GenerateDataKey",
+						"secretsmanager:GetSecretValue",
 						"ec2:DescribeNetworkInterfaces",
 				        "ec2:CreateNetworkInterface",
 				        "ec2:DeleteNetworkInterface",
@@ -108,11 +109,6 @@ public class LcSmsStack extends Stack {
 						ARGS.getConnectorLambdaS3Key()))
 				.environment(envsMap)
 				.vpc(Vpc.fromLookup(this, ARGS.getPrefixedName("lc-sms-connector-vpc"), VpcLookupOptions.builder().isDefault(false).build()))
-						/*.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-connector-vpc"), VpcAttributes.builder()
-						.vpcId("vpc-6d3d8b0a")
-						.availabilityZones(Arrays.asList("ap-southeast-1a", "ap-southeast-1b"))
-						.privateSubnetIds(Arrays.asList("subnet-ea5a228d", "subnet-bd056df4"))
-						.build()))*/
 				.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-connector-sg"), "sg-0aab289f68432c664")))
 				.functionName(ARGS.getPrefixedName("lc-sms-connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler").role(lambdaRole)
@@ -128,11 +124,6 @@ public class LcSmsStack extends Stack {
 						ARGS.getDbConnectorLambdaS3Key()))
 				.environment(envsMap)
 				.vpc(Vpc.fromLookup(this, ARGS.getPrefixedName("lc-sms-db-connector-vpc"), VpcLookupOptions.builder().isDefault(false).build()))
-				/*.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-connector-vpc"), VpcAttributes.builder()
-				.vpcId("vpc-6d3d8b0a")
-				.availabilityZones(Arrays.asList("ap-southeast-1a", "ap-southeast-1b"))
-				.privateSubnetIds(Arrays.asList("subnet-ea5a228d", "subnet-bd056df4"))
-				.build()))*/
 				.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-db-connector-sg"), "sg-0aab289f68432c664")))
 				.functionName(ARGS.getPrefixedName("lc-sms-db-connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.updatedb.handler.SMSDBConnectorHandler::handleRequest").role(lambdaRole)
