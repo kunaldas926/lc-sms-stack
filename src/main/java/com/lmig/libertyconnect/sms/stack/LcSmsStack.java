@@ -23,7 +23,6 @@ import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.apigateway.StageOptions;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.ec2.Vpc;
-import software.amazon.awscdk.services.ec2.VpcAttributes;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyDocument;
@@ -36,11 +35,15 @@ import software.amazon.awscdk.services.lambda.IEventSource;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
+import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.amazon.awscdk.services.sqs.QueueEncryption;
 import software.amazon.awscdk.services.ssm.StringParameter;
+import software.amazon.awscdk.services.stepfunctions.Parallel;
 import software.amazon.awscdk.services.stepfunctions.StateMachine;
+import software.amazon.awscdk.services.stepfunctions.TaskInput;
 import software.amazon.awscdk.services.stepfunctions.tasks.LambdaInvoke;
+import software.amazon.awscdk.services.stepfunctions.tasks.SnsPublish;
 
 public class LcSmsStack extends Stack {
 
@@ -129,12 +132,25 @@ public class LcSmsStack extends Stack {
 				.handler("com.lmig.libertyconnect.sms.updatedb.handler.SMSDBConnectorHandler::handleRequest").role(lambdaRole)
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(15)).build();
 		
-		// Create step function to invoke dbConnector Lambda
+		// Create Topic
+		final Topic responseTopic =
+                 Topic.Builder.create(parent, ARGS.getPrefixedName("lc-sms-response-topic"))
+                         .topicName(ARGS.getPrefixedName("lc-sms-response-topic"))
+                         .build();
+		// Create step function to invoke dbConnector Lambda and send response to sns		
+        final Parallel parallelStates = new Parallel(this, ARGS.getPrefixedName("lc-sms-parallel"))
+        		.branch(LambdaInvoke.Builder.create(this, ARGS.getPrefixedName("lc-sms-db-connector-lambda-task"))
+    		            .lambdaFunction(smsDbConnectorLmbda)	            
+    		            .build())
+        		.branch(SnsPublish.Builder.create(this, ARGS.getPrefixedName("lc-sms-publish-task"))
+        		         .topic(responseTopic)
+        		         .message(TaskInput.fromJsonPathAt("$.message"))
+        		         //.resultPath("$.sns")
+        		         .build());
+
 		final StateMachine stateMachine = StateMachine.Builder.create(this, ARGS.getPrefixedName("lc-sms-statemachine"))
 				.stateMachineName(ARGS.getPrefixedName("lc-sms-statemachine"))
-		        .definition(LambdaInvoke.Builder.create(this, ARGS.getPrefixedName("lc-sms-db-connector-lambda-task"))
-		            .lambdaFunction(smsDbConnectorLmbda)
-		            .build())
+		        .definition(parallelStates)
 		        .build();
 		
 		// Create SSM parameter for vietguys
