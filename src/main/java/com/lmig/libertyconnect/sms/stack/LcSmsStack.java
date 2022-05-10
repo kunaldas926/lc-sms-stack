@@ -134,7 +134,7 @@ public class LcSmsStack extends Stack {
 		
 		// Create Topic
 		final Topic responseTopic =
-                 Topic.Builder.create(parent, ARGS.getPrefixedName("lc-sms-response-topic"))
+                 Topic.Builder.create(this, ARGS.getPrefixedName("lc-sms-response-topic"))
                          .topicName(ARGS.getPrefixedName("lc-sms-response-topic"))
                          .build();
 		// Create step function to invoke dbConnector Lambda and send response to sns		
