@@ -29,6 +29,8 @@ import software.amazon.awscdk.services.iam.PolicyDocument;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
+import software.amazon.awscdk.services.kms.Key;
+import software.amazon.awscdk.services.kms.KeyLookupOptions;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IEventSource;
@@ -136,6 +138,7 @@ public class LcSmsStack extends Stack {
 		final Topic responseTopic =
                  Topic.Builder.create(this, ARGS.getPrefixedName("lc-sms-response-topic"))
                          .topicName(ARGS.getPrefixedName("lc-sms-response-topic"))
+                         .masterKey(Key.fromLookup(this, ARGS.getPrefixedName("lc-sms-topic-key-lookup"), KeyLookupOptions.builder().aliasName("alias/aws/sns").build()))
                          .build();
 		// Create step function to invoke dbConnector Lambda and send response to sns		
         final Parallel parallelStates = new Parallel(this, ARGS.getPrefixedName("lc-sms-parallel"))
@@ -144,8 +147,7 @@ public class LcSmsStack extends Stack {
     		            .build())
         		.branch(SnsPublish.Builder.create(this, ARGS.getPrefixedName("lc-sms-publish-task"))
         		         .topic(responseTopic)
-        		         .message(TaskInput.fromJsonPathAt("$.message"))
-        		         //.resultPath("$.sns")
+        		         .message(TaskInput.fromJsonPathAt("$"))
         		         .build());
 
 		final StateMachine stateMachine = StateMachine.Builder.create(this, ARGS.getPrefixedName("lc-sms-statemachine"))
