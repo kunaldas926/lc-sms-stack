@@ -151,6 +151,19 @@ public class LcSmsStack extends Stack {
                          .build();
 		
 		// Create step function to invoke dbConnector Lambda and send response to sns		
+		final PolicyStatement kmsStatement = PolicyStatement.Builder.create().effect(Effect.ALLOW)
+				.actions(Arrays.asList("kms:Decrypt",
+						"kms:GenerateDataKey"))
+				.resources(Arrays.asList(smsStackKey.getKeyArn()))
+				.build();
+
+		final PolicyDocument stateMachinePolicyDocument = PolicyDocument.Builder.create()
+				.statements(Arrays.asList(kmsStatement)).build();
+
+		final Role stateMachineRole = Role.Builder.create(this, ARGS.getPrefixedName("lc-sms-statemachine-role"))
+				.roleName(ARGS.getPrefixedName("lc-sms-lambda-role"))
+				.inlinePolicies(Collections.singletonMap(ARGS.getPrefixedName("lc-kms-policy"), stateMachinePolicyDocument)).path("/")
+				.assumedBy(new ServicePrincipal("lambda.amazonaws.com")).build();
 		final Map<String, String> snsMsgFieldsMap = new HashMap<>();
 		snsMsgFieldsMap.put("client_reference_number", JsonPath.stringAt("$.client_reference_number"));
 		snsMsgFieldsMap.put("uuid", JsonPath.stringAt("$.uuid"));
@@ -167,6 +180,7 @@ public class LcSmsStack extends Stack {
 		final StateMachine stateMachine = StateMachine.Builder.create(this, ARGS.getPrefixedName("lc-sms-statemachine"))
 				.stateMachineName(ARGS.getPrefixedName("lc-sms-statemachine"))
 		        .definition(parallelStates)
+		        .role(stateMachineRole)
 		        .build();
 		
 		// Create SSM parameter for vietguys
