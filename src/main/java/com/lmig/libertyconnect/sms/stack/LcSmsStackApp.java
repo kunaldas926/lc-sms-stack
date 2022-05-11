@@ -24,8 +24,8 @@ public final class LcSmsStackApp {
 		addTags(app, stackName);
 		new LcSmsStack(app, stackName, StackProps.builder()
                 .env(Environment.builder()
-                        .account("487353296903")
-                        .region("ap-southeast-1")
+                        .account(ARGS.getAccountId())
+                        .region(ARGS.getRegion())
                         .build()).build(), ARGS);
 
 		app.synth();
@@ -54,6 +54,20 @@ public final class LcSmsStackApp {
             required = true
         )
         private String profile;
+        
+        @Parameter(
+        	names = {"-accountId"},
+            description = "Optional: AWS AccountId",
+            required = false
+        )
+        public String accountId;
+            
+        @Parameter(
+            names = {"-region"},
+            description = "Optional: AWS region",
+            required = true
+        )
+        private String region;
 
         @Parameter(
             names = {"-lm_troux_uid"},

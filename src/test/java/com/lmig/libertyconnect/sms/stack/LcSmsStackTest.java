@@ -26,13 +26,15 @@ public class LcSmsStackTest {
 				.dbConnectorLambdaS3Key("code/sms-db-connector-0.0.1-SNAPSHOT.jar")
 				.dtacPass("dummy")
 				.vietguyPass("dummy")
+				.accountId("01234567891011")
+				.region("ap-southeast-1")
 				.build();
 
 		App app = new App();
 		LcSmsStack stack = new LcSmsStack(app, ARGS.getPrefixedName("lc-sms"), StackProps.builder()
                 .env(Environment.builder()
-                        .account("01234567891011")
-                        .region("ap-southeast-1")
+                		.account(ARGS.getAccountId())
+                        .region(ARGS.getRegion())
                         .build()).build(), ARGS);
 
 		JsonNode actual = JSON.valueToTree(app.synth().getStackArtifact(stack.getArtifactId()).getTemplate());
@@ -41,6 +43,8 @@ public class LcSmsStackTest {
 		assertTrue(actual.toString().contains("AWS::Lambda::Function"));
 		assertTrue(actual.toString().contains("AWS::ApiGateway::RestApi"));
 		assertTrue(actual.toString().contains("AWS::SSM::Parameter"));
+		assertTrue(actual.toString().contains("AWS::SNS::Topic"));
+		assertTrue(actual.toString().contains("AWS::StepFunctions::StateMachine"));
 
 	}
 }

@@ -51,7 +51,7 @@ static def getEnvFromBuildPath(jobPath) {
     return directories[-3]
 }
 
-def deployCdk(currentEnv) {
+def deployCdk(currentEnv, accountId, region) {
     echo "Stack deployment starting..."
     // TODO: Mention version here
     sh "npm install -g aws-cdk@latest"
@@ -63,7 +63,9 @@ def deployCdk(currentEnv) {
 			-processorLambdaS3Key ${params.PROCESSOR_LAMBDA_S3_KEY} \
 			-dbConnectorLambdaS3Key ${params.DB_CONNECTOR_LAMBDA_S3_KEY} \
 			-vietguyPass ${params.VIETGUYS_PASS} \
-			-dtacPass ${params.DTAC_PASS}'"
+			-dtacPass ${params.DTAC_PASS} \
+			-accountId ${accountId} \
+			-region ${region}'"
     echo "Stack deployment finished!"
 }
 
@@ -78,10 +80,13 @@ node('linux') {
     
 	stage ("deploy") {
 	def currentEnv = getEnvFromBuildPath(env.JOB_NAME)
-        withAWS(
-        credentials: getAWSCredentialID(environment: currentEnv),
-        region: getAWSRegion()) {
-    		deployCdk(currentEnv)
-    	}
+	def accountId = getAwsAccountId()
+	def region = getAWSRegion()
+		
+    withAWS(
+    credentials: getAWSCredentialID(environment: currentEnv),
+	    region: getAWSRegion()) {
+			deployCdk(currentEnv, accountId, region)
+		}
 	}
 }
