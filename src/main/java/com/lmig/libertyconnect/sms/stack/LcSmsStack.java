@@ -30,7 +30,6 @@ import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.kms.Key;
-import software.amazon.awscdk.services.kms.KeyLookupOptions;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IEventSource;
@@ -41,6 +40,7 @@ import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.amazon.awscdk.services.sqs.QueueEncryption;
 import software.amazon.awscdk.services.ssm.StringParameter;
+import software.amazon.awscdk.services.stepfunctions.JsonPath;
 import software.amazon.awscdk.services.stepfunctions.Parallel;
 import software.amazon.awscdk.services.stepfunctions.StateMachine;
 import software.amazon.awscdk.services.stepfunctions.TaskInput;
@@ -52,6 +52,14 @@ public class LcSmsStack extends Stack {
 	public LcSmsStack(final Construct parent, final String id, final StackProps props, final Args ARGS) {
 		super(parent, id, props);
 
+		// create kms key
+        final Key smsStackKey =
+                Key.Builder.create(this, ARGS.getPrefixedName("lc-sms-key"))
+                        .enableKeyRotation(true)
+                        .policy(getPolicyDocument())
+                        .build();
+        smsStackKey.addAlias(ARGS.getPrefixedName("alias/lc-sms-key"));
+        
 		// create queue
 		final String queueName = ARGS.getPrefixedName("lc-sms-queue.fifo");
 		final Queue queue = Queue.Builder.create(this, queueName).queueName(queueName)
@@ -131,23 +139,29 @@ public class LcSmsStack extends Stack {
 				.vpc(Vpc.fromLookup(this, ARGS.getPrefixedName("lc-sms-db-connector-vpc"), VpcLookupOptions.builder().isDefault(false).build()))
 				.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-db-connector-sg"), "sg-0aab289f68432c664")))
 				.functionName(ARGS.getPrefixedName("lc-sms-db-connector-lambda"))
-				.handler("com.lmig.libertyconnect.sms.updatedb.handler.SMSDBConnectorHandler::handleRequest").role(lambdaRole)
+				.handler("com.lmig.libertyconnect.sms.updatedb.handler.SMSDBConnectorHandler::handleRequest")
+				.role(lambdaRole)
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(15)).build();
 		
 		// Create Topic
 		final Topic responseTopic =
                  Topic.Builder.create(this, ARGS.getPrefixedName("lc-sms-response-topic"))
                          .topicName(ARGS.getPrefixedName("lc-sms-response-topic"))
-                         .masterKey(Key.fromLookup(this, ARGS.getPrefixedName("lc-sms-topic-key-lookup"), KeyLookupOptions.builder().aliasName("alias/aws/sns").build()))
+                         .masterKey(smsStackKey)
                          .build();
+		
 		// Create step function to invoke dbConnector Lambda and send response to sns		
-        final Parallel parallelStates = new Parallel(this, ARGS.getPrefixedName("lc-sms-parallel"))
+		final Map<String, String> snsMsgFieldsMap = new HashMap<>();
+		snsMsgFieldsMap.put("client_reference_number", JsonPath.stringAt("$.client_reference_number"));
+		snsMsgFieldsMap.put("uuid", JsonPath.stringAt("$.uuid"));
+		snsMsgFieldsMap.put("response", JsonPath.stringAt("$.response"));
+		final Parallel parallelStates = new Parallel(this, ARGS.getPrefixedName("lc-sms-parallel"))
         		.branch(LambdaInvoke.Builder.create(this, ARGS.getPrefixedName("lc-sms-db-connector-lambda-task"))
     		            .lambdaFunction(smsDbConnectorLmbda)	            
     		            .build())
         		.branch(SnsPublish.Builder.create(this, ARGS.getPrefixedName("lc-sms-publish-task"))
         		         .topic(responseTopic)
-        		         .message(TaskInput.fromJsonPathAt("$"))
+        		         .message(TaskInput.fromObject(snsMsgFieldsMap))
         		         .build());
 
 		final StateMachine stateMachine = StateMachine.Builder.create(this, ARGS.getPrefixedName("lc-sms-statemachine"))
@@ -198,5 +212,33 @@ public class LcSmsStack extends Stack {
 	    smsResource.addMethod("POST", getWidgetIntegration);
 		
 	}
+	
+
+    private PolicyDocument getPolicyDocument() {
+
+        final PolicyDocument policyDocument = new PolicyDocument();
+        policyDocument.addStatements(getSnsStatement(), getIamPolicyStatement());
+        return policyDocument;
+    }
+
+
+    private PolicyStatement getSnsStatement() {
+
+        final PolicyStatement policyStatement = new PolicyStatement();
+        policyStatement.addActions("kms:GenerateDataKey*", "kms:Decrypt");
+        policyStatement.addServicePrincipal("sns.amazonaws.com");
+        policyStatement.addAllResources();
+        return policyStatement;
+    }
+
+
+    private PolicyStatement getIamPolicyStatement() {
+
+        final PolicyStatement iamUserPermission = new PolicyStatement();
+        iamUserPermission.addActions("kms:*");
+        iamUserPermission.addAccountRootPrincipal();
+        iamUserPermission.addAllResources();
+        return iamUserPermission;
+    }
 
 }
