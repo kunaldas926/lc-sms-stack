@@ -161,7 +161,7 @@ public class LcSmsStack extends Stack {
 				.statements(Arrays.asList(kmsStatement)).build();
 
 		final Role stateMachineRole = Role.Builder.create(this, ARGS.getPrefixedName("lc-sms-statemachine-role"))
-				.roleName(ARGS.getPrefixedName("lc-sms-lambda-role"))
+				.roleName(ARGS.getPrefixedName("lc-sms-statemachine-role"))
 				.inlinePolicies(Collections.singletonMap(ARGS.getPrefixedName("lc-kms-policy"), stateMachinePolicyDocument)).path("/")
 				.assumedBy(new ServicePrincipal("lambda.amazonaws.com")).build();
 		final Map<String, String> snsMsgFieldsMap = new HashMap<>();
