@@ -71,9 +71,9 @@ public class LcSmsStack extends Stack {
                         .vpc(Vpc.fromLookup(this, id, VpcLookupOptions.builder().isDefault(false).build()))
                         .build())
                 .build(); */
-        SecurityGroup sg = SecurityGroup.Builder.create(this, ARGS.getPrefixedName("lc-sms-sg"))
+        final SecurityGroup sg = SecurityGroup.Builder.create(this, ARGS.getPrefixedName("lc-sms-sg"))
 				.securityGroupName(ARGS.getPrefixedName("lc-sms-sg"))
-				.allowAllOutbound(true)
+				.allowAllOutbound(false)
 		        .vpc(Vpc.fromLookup(this, id, VpcLookupOptions.builder().isDefault(false).build()))
 		        .build();
         
@@ -138,7 +138,7 @@ public class LcSmsStack extends Stack {
 				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-connector", ARGS.getPrefixedName("lc-sms")),
 						ARGS.getConnectorLambdaS3Key()))
 				.environment(envsMap)
-				//.vpc(Vpc.fromLookup(this, ARGS.getPrefixedName("lc-sms-connector-vpc"), VpcLookupOptions.builder().isDefault(false).build()))
+				.vpc(Vpc.fromLookup(this, ARGS.getPrefixedName("lc-sms-connector-vpc"), VpcLookupOptions.builder().isDefault(false).build()))
 				.securityGroups(Arrays.asList(sg))
 				.functionName(ARGS.getPrefixedName("lc-sms-connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler").role(lambdaRole)
