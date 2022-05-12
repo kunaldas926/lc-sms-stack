@@ -55,17 +55,6 @@ def deployCdk(currentEnv, accountId, region) {
     echo "Stack deployment starting..."
     // TODO: Mention version here
     sh "npm install -g aws-cdk@latest"
-    sh "cdk synth --require-approval=never --app='java -jar ./target/sms-stack-0.0.1-SNAPSHOT.jar \
-		-profile ${currentEnv} \
-		-lm_troux_uid ${params.TROUX_UID} \
-		-program ${params.PROGRAM} \
-		-connectorLambdaS3Key ${params.CONNECTOR_LAMBDA_S3_KEY} \
-		-processorLambdaS3Key ${params.PROCESSOR_LAMBDA_S3_KEY} \
-		-dbConnectorLambdaS3Key ${params.DB_CONNECTOR_LAMBDA_S3_KEY} \
-		-vietguyPass ${params.VIETGUYS_PASS} \
-		-dtacPass ${params.DTAC_PASS} \
-		-accountId ${accountId} \
-		-region ${region}'"
 	sh "cat ./cdk.out/${params.PROGRAM}-${currentEnv}-lc-sms-stack.template.json"			
     sh "cdk deploy --require-approval=never --app='java -jar ./target/sms-stack-0.0.1-SNAPSHOT.jar \
 			-profile ${currentEnv} \

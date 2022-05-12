@@ -83,7 +83,7 @@ public class LcSmsStack extends Stack {
 		final PolicyStatement statement1 = PolicyStatement.Builder.create().effect(Effect.ALLOW)
 				.actions(Arrays.asList("sqs:ListQueues", "sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage",
 								"sqs:GetQueueAttributes", "sqs:ChangeMessageVisibility", "sqs:GetQueueUrl"))
-				.resources(Arrays.asList("*")).build();
+				.resources(Arrays.asList(queue.getQueueArn())).build();
 
 		final PolicyStatement statement2 = PolicyStatement.Builder.create().effect(Effect.ALLOW)
 				.actions(Arrays
@@ -172,8 +172,13 @@ public class LcSmsStack extends Stack {
 				.resources(Arrays.asList("*"))
 				.build();
 
+		 final PolicyStatement sfnStatement = new PolicyStatement();
+		 sfnStatement.addActions("sts:AssumeRole");
+		 sfnStatement.addServicePrincipal("states.amazonaws.com");
+		 sfnStatement.addAllResources();
+
 		final PolicyDocument stateMachinePolicyDocument = PolicyDocument.Builder.create()
-				.statements(Arrays.asList(kmsStatement)).build();
+				.statements(Arrays.asList(kmsStatement, sfnStatement)).build();
 
 		final Role stateMachineRole = Role.Builder.create(this, ARGS.getPrefixedName("lc-sms-statemachine-role"))
 				.roleName(ARGS.getPrefixedName("lc-sms-statemachine-role"))
