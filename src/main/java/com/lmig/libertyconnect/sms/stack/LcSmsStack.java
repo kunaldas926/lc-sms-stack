@@ -180,7 +180,7 @@ public class LcSmsStack extends Stack {
 		final Role stateMachineRole = Role.Builder.create(this, ARGS.getPrefixedName("lc-sms-statemachine-role"))
 				.roleName(ARGS.getPrefixedName("lc-sms-statemachine-role"))
 				.inlinePolicies(Collections.singletonMap(ARGS.getPrefixedName("lc-sfn-policy"), stateMachinePolicyDocument)).path("/")
-				.assumedBy(new ServicePrincipal("lambda.amazonaws.com")).build();
+				.assumedBy(new ServicePrincipal("states.amazonaws.com")).build();
 		
 		final Map<String, String> snsMsgFieldsMap = new HashMap<>();
 		snsMsgFieldsMap.put("client_reference_number", JsonPath.stringAt("$.client_reference_number"));
