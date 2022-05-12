@@ -28,6 +28,7 @@ import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcAttributes;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.iam.Effect;
+import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyDocument;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
@@ -166,23 +167,20 @@ public class LcSmsStack extends Stack {
                          .build();
 		
 		// Create step function to invoke dbConnector Lambda and send response to sns		
-		final PolicyStatement kmsStatement = PolicyStatement.Builder.create().effect(Effect.ALLOW)
+		final PolicyStatement sfnStatement = PolicyStatement.Builder.create().effect(Effect.ALLOW)
 				.actions(Arrays.asList("kms:Decrypt",
-						"kms:GenerateDataKey"))
+						"kms:GenerateDataKey",
+						"sts:AssumeRole"))
 				.resources(Arrays.asList("*"))
 				.build();
 
-		 final PolicyStatement sfnStatement = new PolicyStatement();
-		 sfnStatement.addActions("sts:AssumeRole");
-		 sfnStatement.addServicePrincipal("states.amazonaws.com");
-		 sfnStatement.addAllResources();
-
 		final PolicyDocument stateMachinePolicyDocument = PolicyDocument.Builder.create()
-				.statements(Arrays.asList(kmsStatement, sfnStatement)).build();
+				.statements(Arrays.asList(sfnStatement)).build();
 
 		final Role stateMachineRole = Role.Builder.create(this, ARGS.getPrefixedName("lc-sms-statemachine-role"))
 				.roleName(ARGS.getPrefixedName("lc-sms-statemachine-role"))
-				.inlinePolicies(Collections.singletonMap(ARGS.getPrefixedName("lc-kms-policy"), stateMachinePolicyDocument)).path("/")
+				.inlinePolicies(Collections.singletonMap(ARGS.getPrefixedName("lc-sfn-policy"), stateMachinePolicyDocument)).path("/")
+				.managedPolicies(Arrays.asList(ManagedPolicy.fromAwsManagedPolicyName("AWSLambdaBasicExecutionRole")))
 				.assumedBy(new ServicePrincipal("lambda.amazonaws.com")).build();
 		final Map<String, String> snsMsgFieldsMap = new HashMap<>();
 		snsMsgFieldsMap.put("client_reference_number", JsonPath.stringAt("$.client_reference_number"));
