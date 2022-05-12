@@ -21,6 +21,8 @@ import software.amazon.awscdk.services.apigateway.LambdaIntegration;
 import software.amazon.awscdk.services.apigateway.Resource;
 import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.apigateway.StageOptions;
+import software.amazon.awscdk.services.ec2.LaunchTemplate;
+import software.amazon.awscdk.services.ec2.MachineImage;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
@@ -56,9 +58,24 @@ public class LcSmsStack extends Stack {
         final Key smsStackKey =
                 Key.Builder.create(this, ARGS.getPrefixedName("lc-sms-key"))
                         .enableKeyRotation(true)
+                        .alias("alias/lc-sms-key")
                         .policy(getPolicyDocument())
                         .build();
-        smsStackKey.addAlias(ARGS.getPrefixedName("alias/lc-sms-key"));
+        
+        // create security group
+        /* final LaunchTemplate template = LaunchTemplate.Builder.create(this, "LaunchTemplate")
+                .machineImage(MachineImage.latestAmazonLinux())
+                .securityGroup(SecurityGroup.Builder.create(this, ARGS.getPrefixedName("lc-sms-sg"))
+                		.securityGroupName(ARGS.getPrefixedName("lc-sms-sg"))
+                		.allowAllOutbound(true)
+                        .vpc(Vpc.fromLookup(this, id, VpcLookupOptions.builder().isDefault(false).build()))
+                        .build())
+                .build(); */
+        SecurityGroup sg = SecurityGroup.Builder.create(this, ARGS.getPrefixedName("lc-sms-sg"))
+				.securityGroupName(ARGS.getPrefixedName("lc-sms-sg"))
+				.allowAllOutbound(true)
+		        .vpc(Vpc.fromLookup(this, id, VpcLookupOptions.builder().isDefault(false).build()))
+		        .build();
         
 		// create queue
 		final String queueName = ARGS.getPrefixedName("lc-sms-queue.fifo");
@@ -122,7 +139,7 @@ public class LcSmsStack extends Stack {
 						ARGS.getConnectorLambdaS3Key()))
 				.environment(envsMap)
 				.vpc(Vpc.fromLookup(this, ARGS.getPrefixedName("lc-sms-connector-vpc"), VpcLookupOptions.builder().isDefault(false).build()))
-				.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-connector-sg"), "sg-0aab289f68432c664")))
+				.securityGroups(Arrays.asList(sg))
 				.functionName(ARGS.getPrefixedName("lc-sms-connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler").role(lambdaRole)
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(5)).build();
@@ -137,7 +154,8 @@ public class LcSmsStack extends Stack {
 						ARGS.getDbConnectorLambdaS3Key()))
 				.environment(envsMap)
 				.vpc(Vpc.fromLookup(this, ARGS.getPrefixedName("lc-sms-db-connector-vpc"), VpcLookupOptions.builder().isDefault(false).build()))
-				.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-db-connector-sg"), "sg-0aab289f68432c664")))
+				//.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-db-connector-sg"), "sg-0aab289f68432c664")))
+				.securityGroups(Arrays.asList(sg))
 				.functionName(ARGS.getPrefixedName("lc-sms-db-connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.updatedb.handler.SMSDBConnectorHandler::handleRequest")
 				.role(lambdaRole)
