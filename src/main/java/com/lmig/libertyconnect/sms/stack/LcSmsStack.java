@@ -64,14 +64,6 @@ public class LcSmsStack extends Stack {
                         .build();
         
         // create security group
-        /* final LaunchTemplate template = LaunchTemplate.Builder.create(this, "LaunchTemplate")
-                .machineImage(MachineImage.latestAmazonLinux())
-                .securityGroup(SecurityGroup.Builder.create(this, ARGS.getPrefixedName("lc-sms-sg"))
-                		.securityGroupName(ARGS.getPrefixedName("lc-sms-sg"))
-                		.allowAllOutbound(true)
-                        .vpc(Vpc.fromLookup(this, id, VpcLookupOptions.builder().isDefault(false).build()))
-                        .build())
-                .build(); */
         final SecurityGroup sg = SecurityGroup.Builder.create(this, ARGS.getPrefixedName("lc-sms-sg"))
 				.securityGroupName(ARGS.getPrefixedName("lc-sms-sg"))
 				.allowAllOutbound(true)
@@ -125,6 +117,9 @@ public class LcSmsStack extends Stack {
 		final Map<String, String> envsMap = new HashMap<>();
 		envsMap.put("PROGRAM", ARGS.program);
 		envsMap.put("ENV", ARGS.getProfile());
+		envsMap.put("ACCOUNT_ID", ARGS.getAccountId());
+		envsMap.put("REGION", ARGS.getRegion());
+
 		
 		final Function smsProcessorLambda = Function.Builder.create(this, ARGS.getPrefixedName("lc-sms-processor-lambda"))
 				.functionName(ARGS.getPrefixedName("lc-sms-processor-lambda"))
@@ -140,7 +135,7 @@ public class LcSmsStack extends Stack {
 						ARGS.getConnectorLambdaS3Key()))
 				.environment(envsMap)
 				.vpc(Vpc.fromLookup(this, ARGS.getPrefixedName("lc-sms-connector-vpc"), VpcLookupOptions.builder().isDefault(false).build()))
-				.vpcSubnets(SubnetSelection.builder().subnetType(SubnetType.PRIVATE).onePerAz(true).build())
+				.vpcSubnets(SubnetSelection.builder().onePerAz(true).build())
 				.securityGroups(Arrays.asList(sg))
 				.functionName(ARGS.getPrefixedName("lc-sms-connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler").role(lambdaRole)
@@ -156,7 +151,7 @@ public class LcSmsStack extends Stack {
 						ARGS.getDbConnectorLambdaS3Key()))
 				.environment(envsMap)
 				.vpc(Vpc.fromLookup(this, ARGS.getPrefixedName("lc-sms-db-connector-vpc"), VpcLookupOptions.builder().isDefault(false).build()))
-				.vpcSubnets(SubnetSelection.builder().subnetType(SubnetType.PRIVATE).onePerAz(true).build())
+				.vpcSubnets(SubnetSelection.builder().onePerAz(true).build())
 				.securityGroups(Arrays.asList(sg))
 				.functionName(ARGS.getPrefixedName("lc-sms-db-connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.updatedb.handler.SMSDBConnectorHandler::handleRequest")
