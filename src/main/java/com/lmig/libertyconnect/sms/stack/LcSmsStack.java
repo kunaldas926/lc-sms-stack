@@ -21,11 +21,9 @@ import software.amazon.awscdk.services.apigateway.LambdaIntegration;
 import software.amazon.awscdk.services.apigateway.Resource;
 import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.apigateway.StageOptions;
-import software.amazon.awscdk.services.ec2.LaunchTemplate;
-import software.amazon.awscdk.services.ec2.MachineImage;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
-import software.amazon.awscdk.services.ec2.SubnetType;
 import software.amazon.awscdk.services.ec2.Vpc;
+import software.amazon.awscdk.services.ec2.VpcAttributes;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyDocument;
@@ -139,7 +137,13 @@ public class LcSmsStack extends Stack {
 				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-connector", ARGS.getPrefixedName("lc-sms")),
 						ARGS.getConnectorLambdaS3Key()))
 				.environment(envsMap)
-				.vpc(Vpc.fromLookup(this, ARGS.getPrefixedName("lc-sms-connector-vpc"), VpcLookupOptions.builder().isDefault(false).build()))
+				.vpc(Vpc.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-connector-vpc"), VpcAttributes.builder()
+					.vpcId("vpc-6d3d8b0a")
+					.availabilityZones(Arrays.asList("ap-southeast-1a", "ap-southeast-1b"))
+					.privateSubnetIds(Arrays.asList("subnet-ea5a228d", "subnet-bd056df4"))
+					.build()))
+				.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-connector-sg"), "sg-0aab289f68432c664")))				
+				//.vpc(Vpc.fromLookup(this, ARGS.getPrefixedName("lc-sms-connector-vpc"), VpcLookupOptions.builder().isDefault(false).build()))
 				.securityGroups(Arrays.asList(sg))
 				.functionName(ARGS.getPrefixedName("lc-sms-connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler").role(lambdaRole)
@@ -154,9 +158,14 @@ public class LcSmsStack extends Stack {
 				.code(Code.fromBucket(Bucket.fromBucketName(this, "sms-db-connector", ARGS.getPrefixedName("lc-sms")),
 						ARGS.getDbConnectorLambdaS3Key()))
 				.environment(envsMap)
-				.vpc(Vpc.fromLookup(this, ARGS.getPrefixedName("lc-sms-db-connector-vpc"), VpcLookupOptions.builder().isDefault(false).build()))
-				//.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-db-connector-sg"), "sg-0aab289f68432c664")))
-				.securityGroups(Arrays.asList(sg))
+				.vpc(Vpc.fromVpcAttributes(this, ARGS.getPrefixedName("lc-sms-db-connector-vpc"), VpcAttributes.builder()
+						.vpcId("vpc-6d3d8b0a")
+						.availabilityZones(Arrays.asList("ap-southeast-1a", "ap-southeast-1b"))
+						.privateSubnetIds(Arrays.asList("subnet-ea5a228d", "subnet-bd056df4"))
+						.build()))
+				.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-db-connector-sg"), "sg-0aab289f68432c664")))
+				//.vpc(Vpc.fromLookup(this, ARGS.getPrefixedName("lc-sms-db-connector-vpc"), VpcLookupOptions.builder().isDefault(false).build()))
+				//.securityGroups(Arrays.asList(sg))
 				.functionName(ARGS.getPrefixedName("lc-sms-db-connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.updatedb.handler.SMSDBConnectorHandler::handleRequest")
 				.role(lambdaRole)
