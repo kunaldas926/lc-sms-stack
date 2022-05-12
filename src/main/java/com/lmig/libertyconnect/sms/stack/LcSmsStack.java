@@ -155,7 +155,7 @@ public class LcSmsStack extends Stack {
 				.environment(envsMap)
 				.vpc(Vpc.fromLookup(this, ARGS.getPrefixedName("lc-sms-db-connector-vpc"), VpcLookupOptions.builder().isDefault(false).build()))
 				//.securityGroups(Arrays.asList(SecurityGroup.fromSecurityGroupId(this, ARGS.getPrefixedName("lc-sms-db-connector-sg"), "sg-0aab289f68432c664")))
-				.securityGroups(List.of(sg))
+				.securityGroups(Arrays.asList(sg))
 				.functionName(ARGS.getPrefixedName("lc-sms-db-connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.updatedb.handler.SMSDBConnectorHandler::handleRequest")
 				.role(lambdaRole)
