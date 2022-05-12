@@ -55,7 +55,6 @@ def deployCdk(currentEnv, accountId, region) {
     echo "Stack deployment starting..."
     // TODO: Mention version here
     sh "npm install -g aws-cdk@latest"
-	sh "cat ./cdk.out/${params.PROGRAM}-${currentEnv}-lc-sms-stack.template.json"			
     sh "cdk deploy --require-approval=never --app='java -jar ./target/sms-stack-0.0.1-SNAPSHOT.jar \
 			-profile ${currentEnv} \
 			-lm_troux_uid ${params.TROUX_UID} \
