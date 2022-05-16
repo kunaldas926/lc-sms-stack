@@ -92,9 +92,14 @@ public class LcSmsStack extends Stack {
 				.resources(Arrays.asList("arn:aws:logs:*:*:*" )).build();
 
 		final PolicyStatement statement3 = PolicyStatement.Builder.create().effect(Effect.ALLOW)
-				.actions(Arrays.asList("kms:Decrypt",
+				.actions(Arrays.asList(
+						"kms:Decrypt",
 						"kms:GenerateDataKey",
-						"secretsmanager:GetSecretValue",
+		                "secretsmanager:GetResourcePolicy",
+		                "secretsmanager:GetSecretValue",
+		                "secretsmanager:DescribeSecret",
+		                "secretsmanager:ListSecretVersionIds",
+		                "secretsmanager:ListSecrets",
 						"ec2:DescribeNetworkInterfaces",
 				        "ec2:CreateNetworkInterface",
 				        "ec2:DeleteNetworkInterface",
