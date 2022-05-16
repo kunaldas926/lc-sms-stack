@@ -17,7 +17,7 @@ properties([
         ),
         
         string(
-            defaultValue: "code/lc-sms-connector-lambda-0.0.1-SNAPSHOT.jar",
+            defaultValue: "code/sms-connector-lambda-1.0.0-SNAPSHOT.jar",
             description: 'bucket key for lambda jar',
             name: 'CONNECTOR_LAMBDA_S3_KEY'          
         ),
@@ -29,7 +29,7 @@ properties([
         ),
         
         string(
-            defaultValue: "code/sms-dbconnector-lambda-1.0-SNAPSHOT.jar",
+            defaultValue: "code/lc-sms-dbconnector-lambda-1.0-SNAPSHOT.jar",
             description: 'bucket key for lambda jar',
             name: 'DB_CONNECTOR_LAMBDA_S3_KEY'
         ),

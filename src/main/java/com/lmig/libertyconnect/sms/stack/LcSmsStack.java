@@ -207,8 +207,8 @@ public class LcSmsStack extends Stack {
 		        .build();
 		
 		// Create SSM parameter for vietguys
-		StringParameter vietGuysparam = StringParameter.Builder.create(this, ARGS.getPrefixedName("lc-sms-vietguys-ssm"))
-				 .parameterName(ARGS.getPrefixedName("lc-sms-vietguys-cred"))
+		StringParameter vietGuysparam = StringParameter.Builder.create(this, ARGS.getPrefixedName("lc-sms-viet_guys-ssm"))
+				 .parameterName(ARGS.getPrefixedName("lc-sms-viet_guys-cred"))
 		         .stringValue(new String(Base64.encodeBase64(ARGS.getVietguyPass().getBytes())))
 		         .build();
 		vietGuysparam.grantRead(lambdaRole);
