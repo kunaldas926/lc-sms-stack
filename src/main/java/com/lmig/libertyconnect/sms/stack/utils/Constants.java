@@ -6,5 +6,5 @@ public class Constants {
 	
 	public static final String PROJECT_NAME = "lc";
 	public static final String SERVICE_NAME = "sms";
-	public static final String S3_BUCKET_NAME = "sms";
+	public static final String S3_BUCKET_NAME = "";
 }
