@@ -31,7 +31,7 @@ public class LcSmsStackTest {
 				.build();
 
 		App app = new App();
-		LcSmsStack stack = new LcSmsStack(app, ARGS.getPrefixedName("lc-sms"), StackProps.builder()
+		LcSmsStack stack = new LcSmsStack(app, ARGS.getPrefixedName("stack"), StackProps.builder()
                 .env(Environment.builder()
                 		.account(ARGS.getAccountId())
                         .region(ARGS.getRegion())

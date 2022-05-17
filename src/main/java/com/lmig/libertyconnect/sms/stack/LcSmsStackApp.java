@@ -21,7 +21,7 @@ public final class LcSmsStackApp {
 	public static void main(final String[] args) {
 		JCommander.newBuilder().addObject(ARGS).build().parse(args);
 		App app = new App();
-		final String stackName = ARGS.getPrefixedName("lc-sms-stack");
+		final String stackName = ARGS.getPrefixedName("stack");
 		addTags(app, stackName);
 		new LcSmsStack(app, stackName, StackProps.builder()
                 .env(Environment.builder()
