@@ -1,8 +1,8 @@
 package com.lmig.libertyconnect.sms.stack;
 
+import com.amazonaws.util.StringUtils;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
-import com.lmig.libertyconnect.sms.stack.LcSmsStackApp.Args;
 import com.lmig.libertyconnect.sms.stack.utils.Constants;
 
 import lombok.AllArgsConstructor;
@@ -113,7 +113,11 @@ public final class LcSmsStackApp {
         private String dtacPass;
         
     	public String getPrefixedName(final String name) {
-    		return String.format("%s%s%s%s%s%s%s%s%s", this.program, "-", this.profile, "-", Constants.PROJECT_NAME, "-", Constants.SERVICE_NAME, "-", name);
-    	}
+	    	if (StringUtils.isNullOrEmpty(name)) {
+	    		return String.format("%s%s%s%s%s%s%s", this.program, "-", this.profile, "-", Constants.PROJECT_NAME, "-", Constants.SERVICE_NAME);
+	    	} else {
+	    		return String.format("%s%s%s%s%s%s%s%s%s", this.program, "-", this.profile, "-", Constants.PROJECT_NAME, "-", Constants.SERVICE_NAME, "-", name);	 
+	    	}
+    	}  		
     }
 }
