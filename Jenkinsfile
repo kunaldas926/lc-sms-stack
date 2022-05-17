@@ -11,7 +11,7 @@ properties([
         ),
         
         string(
-            defaultValue: "7CFD56E9-332A-40F7-8A24-557EF0BFC796",
+            defaultValue: "7B962901-4D59-400C-B089-403B614DCDC3",
             description: 'lm_troux_uid',
             name: 'TROUX_UID'          
         ),

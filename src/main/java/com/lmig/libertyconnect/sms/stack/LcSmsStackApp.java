@@ -3,6 +3,7 @@ package com.lmig.libertyconnect.sms.stack;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.lmig.libertyconnect.sms.stack.LcSmsStackApp.Args;
+import com.lmig.libertyconnect.sms.stack.utils.Constants;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -112,7 +113,7 @@ public final class LcSmsStackApp {
         private String dtacPass;
         
     	public String getPrefixedName(final String name) {
-    		return String.format("%s%s%s%s%s", this.program, "-", this.profile, "-", name);
+    		return String.format("%s%s%s%s%s%s%s%s%s", this.program, "-", this.profile, "-", Constants.PROJECT_NAME, "-", Constants.SERVICE_NAME, "-", name);
     	}
     }
 }
