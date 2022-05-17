@@ -115,7 +115,7 @@ public class LcSmsStack extends Stack {
 
 		final Role lambdaRole = Role.Builder.create(this, ARGS.getPrefixedName("lambda-role"))
 				.roleName(ARGS.getPrefixedName("lambda-role"))
-				.inlinePolicies(Collections.singletonMap(ARGS.getPrefixedName("lc-sqsS3-policy"), policyDocument)).path("/")
+				.inlinePolicies(Collections.singletonMap(ARGS.getPrefixedName("lambda-policy"), policyDocument)).path("/")
 				.assumedBy(new ServicePrincipal("lambda.amazonaws.com")).build();
 
 		final List<IEventSource> eventSources = new ArrayList<>();
@@ -161,7 +161,7 @@ public class LcSmsStack extends Stack {
 				.vpcSubnets(SubnetSelection.builder().onePerAz(true).build())
 				.securityGroups(Arrays.asList(sg))
 				.functionName(ARGS.getPrefixedName("db-connector-lambda"))
-				.handler("com.lmig.libertyconnect.sms.updatedb.handler.DBConnectorHandler::handleRequest")
+				.handler("com.lmig.libertyconnect.sms.updatedb.handler.SMSDBConnectorHandler::handleRequest")
 				.role(Role.fromRoleName(this, ARGS.getPrefixedName("db-connector-lambda-role"), "apac-liberty-connect-role"))
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(15)).build();
 		
