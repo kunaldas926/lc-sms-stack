@@ -1,5 +1,6 @@
 package com.lmig.libertyconnect.sms.stack;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -38,6 +39,7 @@ public class LcSmsStackTest {
                         .build()).build(), ARGS);
 
 		JsonNode actual = JSON.valueToTree(app.synth().getStackArtifact(stack.getArtifactId()).getTemplate());
+		assertEquals("test-local-lc-sms-stack", stack.getStackName());
 		assertTrue(actual.toString().contains("AWS::SQS::Queue"));
 		assertTrue(actual.toString().contains("AWS::Lambda::Function"));
 		assertTrue(actual.toString().contains("AWS::ApiGateway::RestApi"));
