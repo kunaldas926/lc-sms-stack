@@ -141,6 +141,7 @@ public class LcSmsStack extends Stack {
 				.functionName(ARGS.getPrefixedName("connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler").role(connectorLambdaRole)
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(5)).build();
+
 		envsMap.remove("openl_url");
 		envsMap.put("db_host",
 				"intl-sg-apac-liberty-connect-rds-mysql-"+ ARGS.getProfile() +"-dbproxy.proxy-cvluefal1end.ap-southeast-1.rds.amazonaws.com");
