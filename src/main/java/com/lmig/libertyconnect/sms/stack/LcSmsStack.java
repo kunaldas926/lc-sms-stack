@@ -159,19 +159,19 @@ public class LcSmsStack extends Stack {
 				+ ARGS.getProfile() + "/libcdbuser/libconnnectdb22");
 		envsMap.put("vpc_endpoint_url_ssm", "intl-cs-sm-vpc-endpoint-url");
 		envsMap.put("db_name", "libertyconnect");
-		final Function smsDbConnectorLambda = Function.Builder.create(this, ARGS.getPrefixedName("db-connector-lambda"))
+		final Function smsDbConnectorLambda = Function.Builder.create(this, ARGS.getPrefixedName("dbconnector-lambda"))
 				.code(Code.fromBucket(
-						Bucket.fromBucketName(this, "sms-db-connector", UtilMethods.getCodeBucket(ARGS.getProfile())),
+						Bucket.fromBucketName(this, "sms-dbconnector", UtilMethods.getCodeBucket(ARGS.getProfile())),
 						ARGS.getDbConnectorLambdaS3Key()))
 				.environment(envsMap).vpc(vpc).vpcSubnets(SubnetSelection.builder().onePerAz(true).build())
 				// .securityGroups(
 				// Arrays.asList(SecurityGroup.fromLookupByName(this,
-				// ARGS.getPrefixedName("db-connector-sg"),
+				// ARGS.getPrefixedName("dbconnector-sg"),
 				// "intl-sg-apac-liberty-connect-Lambda-" + ARGS.getProfile(), vpc)))
-				.securityGroups(Arrays.asList(sg)).functionName(ARGS.getPrefixedName("db-connector-lambda"))
+				.securityGroups(Arrays.asList(sg)).functionName(ARGS.getPrefixedName("dbconnector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.updatedb.handler.SMSDBConnectorHandler::handleRequest")
 				// .role(Role.fromRoleName(this,
-				// ARGS.getPrefixedName("db-connector-lambda-role"),
+				// ARGS.getPrefixedName("dbconnector-lambda-role"),
 				// "apac-liberty-connect-role"))
 				.role(dbconnectorLambdaRole).runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(15))
 				.build();
@@ -199,7 +199,7 @@ public class LcSmsStack extends Stack {
 		snsMsgFieldsMap.put("uuid", JsonPath.stringAt("$.uuid"));
 		snsMsgFieldsMap.put("response", JsonPath.stringAt("$.response"));
 		final Parallel parallelStates = new Parallel(this, ARGS.getPrefixedName("parallel"))
-				.branch(LambdaInvoke.Builder.create(this, ARGS.getPrefixedName("db-connector-lambda-task"))
+				.branch(LambdaInvoke.Builder.create(this, ARGS.getPrefixedName("dbconnector-lambda-task"))
 						.lambdaFunction(smsDbConnectorLambda).build())
 				.branch(SnsPublish.Builder.create(this, ARGS.getPrefixedName("publish-task")).topic(responseTopic)
 						.message(TaskInput.fromObject(snsMsgFieldsMap)).build());
