@@ -57,8 +57,11 @@ public class LcSmsStack extends Stack {
 		super(parent, id, props);
 
 		// create kms key
-		final Key smsStackKey = Key.Builder.create(this, ARGS.getPrefixedName("key")).enableKeyRotation(true)
-				.alias("alias/key").policy(getPolicyDocument()).build();
+		final Key smsStackKey = Key.Builder
+				.create(this, ARGS.getPrefixedName("key"))
+				.enableKeyRotation(true)
+				.alias(ARGS.getPrefixedName("alias/key"))
+				.policy(getPolicyDocument()).build();
 
 		// create security group
 		final SecurityGroup sg = SecurityGroup.Builder.create(this, ARGS.getPrefixedName("sg"))
