@@ -57,11 +57,8 @@ public class LcSmsStack extends Stack {
 		super(parent, id, props);
 
 		// create kms key
-		final Key smsStackKey = Key.Builder
-				.create(this, ARGS.getPrefixedName("key"))
-				.enableKeyRotation(true)
-				.alias(ARGS.getPrefixedName("alias/key"))
-				.policy(getPolicyDocument()).build();
+		final Key smsStackKey = Key.Builder.create(this, ARGS.getPrefixedName("key")).enableKeyRotation(true)
+				.alias(ARGS.getPrefixedName("alias/key")).policy(getPolicyDocument()).build();
 
 		// create security group
 		final SecurityGroup sg = SecurityGroup.Builder.create(this, ARGS.getPrefixedName("sg"))
@@ -162,19 +159,22 @@ public class LcSmsStack extends Stack {
 				+ ARGS.getProfile() + "/libcdbuser/libconnnectdb22");
 		envsMap.put("vpc_endpoint_url_ssm", "intl-cs-sm-vpc-endpoint-url");
 		envsMap.put("db_name", "libertyconnect");
-		final Function smsDbConnectorLmbda = Function.Builder.create(this, ARGS.getPrefixedName("db-connector-lambda"))
+		final Function smsDbConnectorLambda = Function.Builder.create(this, ARGS.getPrefixedName("db-connector-lambda"))
 				.code(Code.fromBucket(
 						Bucket.fromBucketName(this, "sms-db-connector", UtilMethods.getCodeBucket(ARGS.getProfile())),
 						ARGS.getDbConnectorLambdaS3Key()))
 				.environment(envsMap).vpc(vpc).vpcSubnets(SubnetSelection.builder().onePerAz(true).build())
-				.securityGroups(
-						Arrays.asList(SecurityGroup.fromLookupByName(this, ARGS.getPrefixedName("db-connector-sg"),
-								"intl-sg-apac-liberty-connect-Lambda-" + ARGS.getProfile(), vpc)))
-				.functionName(ARGS.getPrefixedName("db-connector-lambda"))
+				// .securityGroups(
+				// Arrays.asList(SecurityGroup.fromLookupByName(this,
+				// ARGS.getPrefixedName("db-connector-sg"),
+				// "intl-sg-apac-liberty-connect-Lambda-" + ARGS.getProfile(), vpc)))
+				.securityGroups(Arrays.asList(sg)).functionName(ARGS.getPrefixedName("db-connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.updatedb.handler.SMSDBConnectorHandler::handleRequest")
-				.role(Role.fromRoleName(this, ARGS.getPrefixedName("db-connector-lambda-role"),
-						"apac-liberty-connect-role"))
-				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(15)).build();
+				// .role(Role.fromRoleName(this,
+				// ARGS.getPrefixedName("db-connector-lambda-role"),
+				// "apac-liberty-connect-role"))
+				.role(dbconnectorLambdaRole).runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(15))
+				.build();
 
 		// Create Topic
 		final Topic responseTopic = Topic.Builder.create(this, ARGS.getPrefixedName("response-topic"))
@@ -200,7 +200,7 @@ public class LcSmsStack extends Stack {
 		snsMsgFieldsMap.put("response", JsonPath.stringAt("$.response"));
 		final Parallel parallelStates = new Parallel(this, ARGS.getPrefixedName("parallel"))
 				.branch(LambdaInvoke.Builder.create(this, ARGS.getPrefixedName("db-connector-lambda-task"))
-						.lambdaFunction(smsDbConnectorLmbda).build())
+						.lambdaFunction(smsDbConnectorLambda).build())
 				.branch(SnsPublish.Builder.create(this, ARGS.getPrefixedName("publish-task")).topic(responseTopic)
 						.message(TaskInput.fromObject(snsMsgFieldsMap)).build());
 
