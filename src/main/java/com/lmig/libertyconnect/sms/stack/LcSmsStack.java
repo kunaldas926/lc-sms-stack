@@ -107,6 +107,15 @@ public class LcSmsStack extends Stack {
 						connectorPolicyDocument))
 				.path("/").assumedBy(new ServicePrincipal("lambda.amazonaws.com")).build();
 
+		final PolicyDocument dbconnectorPolicyDocument = PolicyDocument.Builder.create()
+				.statements(Arrays.asList(policyStatement, logStatement)).build();
+
+		final Role dbconnectorLambdaRole = Role.Builder.create(this, ARGS.getPrefixedName("dbconnector-lambda-role"))
+				.roleName(ARGS.getPrefixedName("dbconnector-lambda-role"))
+				.inlinePolicies(Collections.singletonMap(ARGS.getPrefixedName("dbconnector-lambda-policy"),
+						dbconnectorPolicyDocument))
+				.path("/").assumedBy(new ServicePrincipal("lambda.amazonaws.com")).build();
+
 		final IVpc vpc = Vpc.fromLookup(this, ARGS.getPrefixedName("vpc"),
 				VpcLookupOptions.builder().isDefault(false).build());
 
@@ -143,11 +152,11 @@ public class LcSmsStack extends Stack {
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(5)).build();
 
 		envsMap.remove("openl_url");
-		envsMap.put("db_host",
-				"intl-sg-apac-liberty-connect-rds-mysql-"+ ARGS.getProfile() +"-dbproxy.proxy-cvluefal1end.ap-southeast-1.rds.amazonaws.com");
+		envsMap.put("db_host", "intl-sg-apac-liberty-connect-rds-mysql-" + ARGS.getProfile()
+				+ "-dbproxy.proxy-cvluefal1end.ap-southeast-1.rds.amazonaws.com");
 		envsMap.put("port", "3306");
-		envsMap.put("secret_id",
-				"apac-liberty-connect-rds-stack/mysql/intl-sg-apac-liberty-connect-rds-mysql-"+ ARGS.getProfile() +"/libcdbuser/libconnnectdb22");
+		envsMap.put("secret_id", "apac-liberty-connect-rds-stack/mysql/intl-sg-apac-liberty-connect-rds-mysql-"
+				+ ARGS.getProfile() + "/libcdbuser/libconnnectdb22");
 		envsMap.put("vpc_endpoint_url_ssm", "intl-cs-sm-vpc-endpoint-url");
 		envsMap.put("db_name", "libertyconnect");
 		final Function smsDbConnectorLmbda = Function.Builder.create(this, ARGS.getPrefixedName("db-connector-lambda"))
