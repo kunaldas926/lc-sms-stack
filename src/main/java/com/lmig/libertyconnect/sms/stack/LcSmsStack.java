@@ -25,6 +25,7 @@ import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.apigateway.StageOptions;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
+import software.amazon.awscdk.services.ec2.Subnet;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
@@ -62,8 +63,10 @@ public class LcSmsStack extends Stack {
 
 		// create security group
 		final SecurityGroup sg = SecurityGroup.Builder.create(this, ARGS.getPrefixedName("sg"))
-				.securityGroupName(ARGS.getPrefixedName("sg")).allowAllOutbound(true)
-				.vpc(Vpc.fromLookup(this, id, VpcLookupOptions.builder().isDefault(false).build())).build();
+				.securityGroupName(ARGS.getPrefixedName("sg"))
+				.allowAllOutbound(true)
+				.vpc(Vpc.fromLookup(this, id, 
+						VpcLookupOptions.builder().isDefault(false).build())).build();
 
 		// create queue
 		final String queueName = ARGS.getPrefixedName("queue.fifo");
@@ -119,6 +122,8 @@ public class LcSmsStack extends Stack {
 		final IVpc vpc = Vpc.fromLookup(this, ARGS.getPrefixedName("vpc"),
 				VpcLookupOptions.builder().isDefault(false).build());
 
+		final SubnetSelection subnetSelection = getSubnetSelection(ARGS);
+		
 		final List<IEventSource> eventSources = new ArrayList<>();
 		eventSources.add(SqsEventSource.Builder.create(queue).batchSize(1).enabled(true).build());
 
@@ -146,7 +151,8 @@ public class LcSmsStack extends Stack {
 				.environment(envsMap).vpc(vpc)
 				// .vpc(Vpc.fromLookup(this, ARGS.getPrefixedName("connector-vpc"),
 				// VpcLookupOptions.builder().isDefault(false).build()))
-				.vpcSubnets(SubnetSelection.builder().onePerAz(true).build()).securityGroups(Arrays.asList(sg))
+				.vpcSubnets(subnetSelection)
+				.securityGroups(Arrays.asList(sg))
 				.functionName(ARGS.getPrefixedName("connector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler").role(connectorLambdaRole)
 				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(5)).build();
@@ -163,12 +169,15 @@ public class LcSmsStack extends Stack {
 				.code(Code.fromBucket(
 						Bucket.fromBucketName(this, "sms-dbconnector", UtilMethods.getCodeBucket(ARGS.getProfile())),
 						ARGS.getDbConnectorLambdaS3Key()))
-				.environment(envsMap).vpc(vpc).vpcSubnets(SubnetSelection.builder().onePerAz(true).build())
+				.environment(envsMap)
+				.vpc(vpc)
+				.vpcSubnets(subnetSelection)				
 				// .securityGroups(
 				// Arrays.asList(SecurityGroup.fromLookupByName(this,
 				// ARGS.getPrefixedName("dbconnector-sg"),
 				// "intl-sg-apac-liberty-connect-Lambda-" + ARGS.getProfile(), vpc)))
-				.securityGroups(Arrays.asList(sg)).functionName(ARGS.getPrefixedName("dbconnector-lambda"))
+				.securityGroups(Arrays.asList(sg))
+				.functionName(ARGS.getPrefixedName("dbconnector-lambda"))
 				.handler("com.lmig.libertyconnect.sms.updatedb.handler.SMSDBConnectorHandler::handleRequest")
 				// .role(Role.fromRoleName(this,
 				// ARGS.getPrefixedName("dbconnector-lambda-role"),
@@ -221,8 +230,10 @@ public class LcSmsStack extends Stack {
 		dtacParam.grantRead(smsProcessorLambda);
 
 		// Create Rest API Gateway
-		final PolicyStatement apiStatement = PolicyStatement.Builder.create().effect(Effect.ALLOW)
-				.actions(Arrays.asList("execute-api:Invoke")).resources(Arrays.asList("*")).build();
+		final PolicyStatement apiStatement = PolicyStatement.Builder.create()
+				.effect(Effect.ALLOW)
+				.actions(Arrays.asList("execute-api:Invoke"))
+				.resources(Arrays.asList("*")).build();
 		apiStatement.addAnyPrincipal();
 
 		final PolicyDocument apiPolicyDocument = PolicyDocument.Builder.create().statements(Arrays.asList(apiStatement))
@@ -234,8 +245,8 @@ public class LcSmsStack extends Stack {
 						EndpointConfiguration.builder().types(Arrays.asList(EndpointType.PRIVATE)).build())
 				.policy(apiPolicyDocument).deployOptions(StageOptions.builder().stageName(ARGS.getProfile()).build())
 				.cloudWatchRole(false)
-
 				.build();
+		
 		final Resource smsResource = api.getRoot().addResource(Constants.SERVICE_NAME);
 		final LambdaIntegration getWidgetIntegration = LambdaIntegration.Builder.create(smsConnectorLambda).build();
 
@@ -266,6 +277,30 @@ public class LcSmsStack extends Stack {
 		iamUserPermission.addAccountRootPrincipal();
 		iamUserPermission.addAllResources();
 		return iamUserPermission;
+	}
+	
+	private SubnetSelection getSubnetSelection(final Args ARGS) {
+		SubnetSelection subnetSelection;
+		if ("dev".equals(ARGS.getProfile())) {
+			subnetSelection = SubnetSelection.builder()
+					.subnets(Arrays.asList(Subnet
+							.fromSubnetId(this, "subnet-1", "subnet-ea5a228d"),
+							Subnet.fromSubnetId(this, "subnet-2", "subnet-bd056df4")))
+					.onePerAz(true)
+					.build();
+		} else if ("nonprod".equals(ARGS.getProfile())) {
+			subnetSelection = SubnetSelection.builder()
+					.subnets(Arrays.asList(Subnet
+							.fromSubnetId(this, "subnet-1", "subnet-0f78eac9f959cce02"),
+							Subnet.fromSubnetId(this, "subnet-2", "subnet-0e45442c0143a2494")))
+					.onePerAz(true)
+					.build();
+		} else {
+			subnetSelection = SubnetSelection.builder()
+					.onePerAz(true)
+					.build();
+		}
+		return subnetSelection;
 	}
 
 }
