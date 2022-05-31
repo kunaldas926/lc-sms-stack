@@ -237,7 +237,7 @@ public class LcSmsStack extends Stack {
 	public Function createNonVpcLambda(final String name, final String handler, final Role role,
 			final String codeBucketKey, final Map<String, String> envsMap,
 			final List<IEventSource> eventSources) {
-		Function.Builder builder = Function.Builder.create(this, args.getPrefixedName(name))
+		Function.Builder builder = Function.Builder.create(this, name)
 				.code(Code.fromBucket(
 						Bucket.fromBucketName(this, name, UtilMethods.getCodeBucket(args.getProfile())),
 					codeBucketKey))
@@ -258,7 +258,7 @@ public class LcSmsStack extends Stack {
 			final Role role, final String codeBucketKey, final Map<String, String> envsMap, 
 			final List<IEventSource> eventSources) {
 		
-		Function.Builder builder = Function.Builder.create(this, args.getPrefixedName(name))
+		Function.Builder builder = Function.Builder.create(this, name)
 					.code(Code.fromBucket(
 							Bucket.fromBucketName(this, name, UtilMethods.getCodeBucket(args.getProfile())),
 						codeBucketKey))
