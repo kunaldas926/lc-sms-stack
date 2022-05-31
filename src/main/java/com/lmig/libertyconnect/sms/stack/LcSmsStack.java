@@ -239,7 +239,7 @@ public class LcSmsStack extends Stack {
 			final List<IEventSource> eventSources) {
 		Function.Builder builder = Function.Builder.create(this, name)
 				.code(Code.fromBucket(
-						Bucket.fromBucketName(this, name, UtilMethods.getCodeBucket(args.getProfile())),
+						Bucket.fromBucketName(this, name + "-bucket", UtilMethods.getCodeBucket(args.getProfile())),
 					codeBucketKey))
 				.environment(envsMap)
 				.functionName(name)
@@ -260,7 +260,7 @@ public class LcSmsStack extends Stack {
 		
 		Function.Builder builder = Function.Builder.create(this, name)
 					.code(Code.fromBucket(
-							Bucket.fromBucketName(this, name, UtilMethods.getCodeBucket(args.getProfile())),
+							Bucket.fromBucketName(this, name + "-bucket", UtilMethods.getCodeBucket(args.getProfile())),
 						codeBucketKey))
 					.environment(envsMap)
 					.vpc(vpc)
