@@ -54,7 +54,7 @@ static def getEnvFromBuildPath(jobPath) {
 def deployCdk(currentEnv, accountId, region) {
     echo "Stack deployment starting..."
     // TODO: Mention version here
-    sh "npm install -g aws-cdk@latest"
+    sh "npm install -g aws-cdk@2.24.1"
     sh "cdk deploy --require-approval=never --app='java -jar ./target/sms-stack-0.0.1-SNAPSHOT.jar \
 			-profile ${currentEnv} \
 			-lm_troux_uid ${params.TROUX_UID} \

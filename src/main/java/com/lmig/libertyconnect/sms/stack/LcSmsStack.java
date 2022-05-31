@@ -192,10 +192,10 @@ public class LcSmsStack extends Stack {
 				dbconnectorLambdaRole, args.getDbConnectorLambdaS3Key(), envsMap, null);
 		
 		// Create SSM parameter for vietguys
-		createSSM("viet_guys-cred", args.getVietguyPass(), smsProcessorLambda);
+		createSSM("viet_guys-ssm","viet_guys-cred", args.getVietguyPass(), smsProcessorLambda);
 
 		// Create SSM parameter for dtac
-		createSSM("dtac-cred", args.getDtacPass(), smsProcessorLambda);
+		createSSM("dtac-ssm", "dtac-cred", args.getDtacPass(), smsProcessorLambda);
 
 		// Create Topic
 		final Topic responseTopic = createTopic(args.getPrefixedName("response-topic"), smsStackKey);
@@ -287,8 +287,9 @@ public class LcSmsStack extends Stack {
 				.build();
 	}
 	
-	public StringParameter createSSM(final String parameterName, final String originalValue, final Function lambda) {
-		StringParameter stringParameter = StringParameter.Builder.create(this, args.getPrefixedName(parameterName))
+	public StringParameter createSSM(final String id, 
+			final String parameterName, final String originalValue, final Function lambda) {
+		StringParameter stringParameter = StringParameter.Builder.create(this, args.getPrefixedName(id))
 				.parameterName(args.getPrefixedName(parameterName))
 				.stringValue(new String(Base64.encodeBase64(originalValue.getBytes()))).build();
 		stringParameter.grantRead(lambda);
