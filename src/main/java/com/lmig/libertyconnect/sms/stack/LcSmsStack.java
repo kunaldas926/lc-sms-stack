@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
-import org.jetbrains.annotations.NotNull;
 
 import com.amazonaws.util.StringUtils;
 import com.lmig.libertyconnect.sms.stack.LcSmsStackApp.Args;
@@ -27,18 +26,12 @@ import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.apigateway.StageOptions;
 import software.amazon.awscdk.services.ec2.GatewayVpcEndpoint;
 import software.amazon.awscdk.services.ec2.IGatewayVpcEndpoint;
-import software.amazon.awscdk.services.ec2.IInterfaceVpcEndpoint;
 import software.amazon.awscdk.services.ec2.IVpc;
-import software.amazon.awscdk.services.ec2.IVpcEndpoint;
-import software.amazon.awscdk.services.ec2.InterfaceVpcEndpoint;
-import software.amazon.awscdk.services.ec2.InterfaceVpcEndpointAttributes;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.ec2.Subnet;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.ec2.Vpc;
-import software.amazon.awscdk.services.ec2.VpcEndpoint;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
-import software.amazon.awscdk.services.ec2.VpcProps;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyDocument;
 import software.amazon.awscdk.services.iam.PolicyStatement;
@@ -50,7 +43,6 @@ import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IEventSource;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
-import software.amazon.awscdk.services.route53.targets.ApiGateway;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
@@ -200,10 +192,10 @@ public class LcSmsStack extends Stack {
 				dbconnectorLambdaRole, args.getDbConnectorLambdaS3Key(), envsMap, null);
 		
 		// Create SSM parameter for vietguys
-		createSSM("viet_guys-cred", smsProcessorLambda);
+		createSSM("viet_guys-cred", args.getVietguyPass(), smsProcessorLambda);
 
 		// Create SSM parameter for dtac
-		createSSM("dtac-cred", smsProcessorLambda);
+		createSSM("dtac-cred", args.getDtacPass(), smsProcessorLambda);
 
 		// Create Topic
 		final Topic responseTopic = createTopic(args.getPrefixedName("response-topic"), smsStackKey);
@@ -295,10 +287,10 @@ public class LcSmsStack extends Stack {
 				.build();
 	}
 	
-	public StringParameter createSSM(final String parameterName, final Function lambda) {
+	public StringParameter createSSM(final String parameterName, final String originalValue, final Function lambda) {
 		StringParameter stringParameter = StringParameter.Builder.create(this, args.getPrefixedName(parameterName))
 				.parameterName(args.getPrefixedName(parameterName))
-				.stringValue(new String(Base64.encodeBase64(args.getVietguyPass().getBytes()))).build();
+				.stringValue(new String(Base64.encodeBase64(originalValue.getBytes()))).build();
 		stringParameter.grantRead(lambda);
 		return stringParameter;
 	}
