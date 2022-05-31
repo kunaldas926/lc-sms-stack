@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
+import org.jetbrains.annotations.NotNull;
 
 import com.amazonaws.util.StringUtils;
 import com.lmig.libertyconnect.sms.stack.LcSmsStackApp.Args;
@@ -24,15 +25,20 @@ import software.amazon.awscdk.services.apigateway.LambdaIntegration;
 import software.amazon.awscdk.services.apigateway.Resource;
 import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.apigateway.StageOptions;
+import software.amazon.awscdk.services.ec2.GatewayVpcEndpoint;
+import software.amazon.awscdk.services.ec2.IGatewayVpcEndpoint;
 import software.amazon.awscdk.services.ec2.IInterfaceVpcEndpoint;
 import software.amazon.awscdk.services.ec2.IVpc;
+import software.amazon.awscdk.services.ec2.IVpcEndpoint;
 import software.amazon.awscdk.services.ec2.InterfaceVpcEndpoint;
 import software.amazon.awscdk.services.ec2.InterfaceVpcEndpointAttributes;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.ec2.Subnet;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.ec2.Vpc;
+import software.amazon.awscdk.services.ec2.VpcEndpoint;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
+import software.amazon.awscdk.services.ec2.VpcProps;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyDocument;
 import software.amazon.awscdk.services.iam.PolicyStatement;
@@ -44,6 +50,7 @@ import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IEventSource;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
+import software.amazon.awscdk.services.route53.targets.ApiGateway;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
@@ -312,14 +319,17 @@ public class LcSmsStack extends Stack {
 			vpcEndpointId = "vpce-0ad8d2b2c5e1e404f";
 		} else if ("prod".equals(args.getProfile())) {
 			vpcEndpointId = "vpce-06a18f15c9b645f6e";
-		}
+		}		
 		
-		if (StringUtils.isNullOrEmpty(vpcEndpointId)) {
-			final List<IInterfaceVpcEndpoint> endpointList = Arrays.asList(InterfaceVpcEndpoint
+		if (!StringUtils.isNullOrEmpty(vpcEndpointId)) {
+			final List<IGatewayVpcEndpoint> endpointList = Arrays.asList(GatewayVpcEndpoint.fromGatewayVpcEndpointId(this, "connector-endpoint-1", vpcEndpointId));
+					
+					/* InterfaceVpcEndpoint
 					.fromInterfaceVpcEndpointAttributes(this, "connector-vpc-1", 
 							InterfaceVpcEndpointAttributes.builder()
-							.vpcEndpointId(vpcEndpointId)	    
-							.build()));
+							.vpcEndpointId(vpcEndpointId)
+							.port(80)
+							.build())); */
 			
 			endpointConfiguration = EndpointConfiguration.builder()
 					.types(Arrays.asList(EndpointType.PRIVATE))
@@ -339,14 +349,12 @@ public class LcSmsStack extends Stack {
 				.restApiName(args.getPrefixedName("api"))
 				.endpointConfiguration(endpointConfiguration)	
 				.policy(apiPolicyDocument).deployOptions(StageOptions.builder()
-						.stageName(args.getProfile())
+						.stageName(args.getProfile() + "/" + Constants.SMS_CONNECTOR_API_VERSION)
 						.build())
 				.cloudWatchRole(false)
 				.build();
 		
-		final Resource smsResource = api.getRoot().addResource(
-				Constants.SMS_CONNECTOR_API_VERSION 
-				+ "/" + Constants.SERVICE_NAME);
+		final Resource smsResource = api.getRoot().addResource(Constants.SERVICE_NAME);
 		final LambdaIntegration getWidgetIntegration = LambdaIntegration.Builder.create(lambda).build();
 
 		smsResource.addMethod("POST", getWidgetIntegration);
