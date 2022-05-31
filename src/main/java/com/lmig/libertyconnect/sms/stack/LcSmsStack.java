@@ -9,6 +9,7 @@ import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
 
+import com.amazonaws.util.StringUtils;
 import com.lmig.libertyconnect.sms.stack.LcSmsStackApp.Args;
 import com.lmig.libertyconnect.sms.stack.utils.Constants;
 import com.lmig.libertyconnect.sms.stack.utils.UtilMethods;
@@ -23,7 +24,10 @@ import software.amazon.awscdk.services.apigateway.LambdaIntegration;
 import software.amazon.awscdk.services.apigateway.Resource;
 import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.apigateway.StageOptions;
+import software.amazon.awscdk.services.ec2.IInterfaceVpcEndpoint;
 import software.amazon.awscdk.services.ec2.IVpc;
+import software.amazon.awscdk.services.ec2.InterfaceVpcEndpoint;
+import software.amazon.awscdk.services.ec2.InterfaceVpcEndpointAttributes;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.ec2.Subnet;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
@@ -53,205 +57,299 @@ import software.amazon.awscdk.services.stepfunctions.tasks.LambdaInvoke;
 import software.amazon.awscdk.services.stepfunctions.tasks.SnsPublish;
 
 public class LcSmsStack extends Stack {
+	
+	private Args args;
+	private SecurityGroup sg;
+	private IVpc vpc;
+	private SubnetSelection subnetSelection;
 
-	public LcSmsStack(final Construct parent, final String id, final StackProps props, final Args ARGS) {
+	public LcSmsStack(final Construct parent, final String id, final StackProps props, final Args args) {
 		super(parent, id, props);
-
+		this.args = args;
+		
 		// create kms key
-		final Key smsStackKey = Key.Builder.create(this, ARGS.getPrefixedName("key")).enableKeyRotation(true)
-				.alias(ARGS.getPrefixedName("alias/key")).policy(getPolicyDocument()).build();
+		final Key smsStackKey = Key.Builder.create(this, args.getPrefixedName("key"))
+				.enableKeyRotation(true)
+				.alias(args.getPrefixedName("alias/key"))
+				.policy(getPolicyDocument())
+				.build();
 
 		// create security group
-		final SecurityGroup sg = SecurityGroup.Builder.create(this, ARGS.getPrefixedName("sg"))
-				.securityGroupName(ARGS.getPrefixedName("sg"))
+		sg = SecurityGroup.Builder.create(this, args.getPrefixedName("sg"))
+				.securityGroupName(args.getPrefixedName("sg"))
 				.allowAllOutbound(true)
 				.vpc(Vpc.fromLookup(this, id, 
 						VpcLookupOptions.builder().isDefault(false).build())).build();
 
+		// create vpc and subnet selection
+		vpc = Vpc.fromLookup(this, args.getPrefixedName("vpc"),
+				VpcLookupOptions.builder().isDefault(false).build());
+
+		subnetSelection = getSubnetSelection();
+		
 		// create queue
-		final String queueName = ARGS.getPrefixedName("queue.fifo");
+		final String queueName = args.getPrefixedName("queue.fifo");
 		final Queue queue = Queue.Builder.create(this, queueName).queueName(queueName)
 				.retentionPeriod(Duration.days(14)).fifo(true).encryption(QueueEncryption.KMS_MANAGED)
 				.visibilityTimeout(Duration.minutes(6)).build();
 
-		// create lambda, roles and permissions
+		// create roles
 		final PolicyStatement sqsStatement = PolicyStatement.Builder.create().effect(Effect.ALLOW)
 				.actions(Arrays.asList("sqs:ListQueues", "sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage",
 						"sqs:GetQueueAttributes", "sqs:ChangeMessageVisibility", "sqs:GetQueueUrl"))
-				.resources(Arrays.asList(queue.getQueueArn())).build();
+				.resources(Arrays.asList(queue.getQueueArn()))
+				.build();
 
 		final PolicyStatement logStatement = PolicyStatement.Builder.create().effect(Effect.ALLOW)
 				.actions(Arrays.asList("logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"))
-				.resources(Arrays.asList("arn:aws:logs:*:*:*")).build();
+				.resources(Arrays.asList("arn:aws:logs:*:*:*"))
+				.build();
 
-		final PolicyStatement policyStatement = PolicyStatement.Builder.create().effect(Effect.ALLOW)
-				.actions(Arrays.asList("kms:Decrypt", "kms:GenerateDataKey", "secretsmanager:GetResourcePolicy",
+		final PolicyStatement kmsStatement = PolicyStatement.Builder.create().effect(Effect.ALLOW)
+				.actions(Arrays.asList("kms:Decrypt", "kms:GenerateDataKey"))
+				.resources(Arrays.asList("*"))
+				.build();
+		
+		final PolicyStatement secretManagerStatement = PolicyStatement.Builder.create().effect(Effect.ALLOW)
+				.actions(Arrays.asList("secretsmanager:GetResourcePolicy",
 						"secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret",
-						"secretsmanager:ListSecretVersionIds", "secretsmanager:ListSecrets",
-						"ec2:DescribeNetworkInterfaces", "ec2:CreateNetworkInterface", "ec2:DeleteNetworkInterface",
-						"ec2:DescribeInstances", "ec2:AttachNetworkInterface", "states:StartExecution"))
-				.resources(Arrays.asList("*")).build();
+						"secretsmanager:ListSecretVersionIds", "secretsmanager:ListSecrets"))
+				.resources(Arrays.asList("*"))
+				.build();
 
-		final PolicyDocument processorPolicyDocument = PolicyDocument.Builder.create()
-				.statements(Arrays.asList(sqsStatement, policyStatement, logStatement)).build();
+		final PolicyStatement statesStatement = PolicyStatement.Builder.create().effect(Effect.ALLOW)
+				.actions(Arrays.asList("states:StartExecution"))
+				.resources(Arrays.asList("*"))
+				.build();
+		
+		final PolicyStatement networkStatement = PolicyStatement.Builder.create().effect(Effect.ALLOW)
+				.actions(Arrays.asList("ec2:DescribeNetworkInterfaces", "ec2:CreateNetworkInterface", "ec2:DeleteNetworkInterface",
+						"ec2:DescribeInstances", "ec2:AttachNetworkInterface"))
+				.resources(Arrays.asList("*"))
+				.build();
 
-		final Role processorLambdaRole = Role.Builder.create(this, ARGS.getPrefixedName("processor-lambda-role"))
-				.roleName(ARGS.getPrefixedName("processor-lambda-role"))
-				.inlinePolicies(Collections.singletonMap(ARGS.getPrefixedName("processor-lambda-policy"),
-						processorPolicyDocument))
-				.path("/").assumedBy(new ServicePrincipal("lambda.amazonaws.com")).build();
 
 		final PolicyDocument connectorPolicyDocument = PolicyDocument.Builder.create()
-				.statements(Arrays.asList(sqsStatement, policyStatement, logStatement)).build();
-
-		final Role connectorLambdaRole = Role.Builder.create(this, ARGS.getPrefixedName("connector-lambda-role"))
-				.roleName(ARGS.getPrefixedName("connector-lambda-role"))
-				.inlinePolicies(Collections.singletonMap(ARGS.getPrefixedName("connector-lambda-policy"),
+				.statements(Arrays.asList(sqsStatement, logStatement, networkStatement)).build();
+		
+		final PolicyDocument processorPolicyDocument = PolicyDocument.Builder.create()
+				.statements(Arrays.asList(sqsStatement, statesStatement, logStatement)).build();
+		
+		final PolicyDocument dbconnectorPolicyDocument = PolicyDocument.Builder.create()
+				.statements(Arrays.asList(kmsStatement, secretManagerStatement, logStatement, networkStatement)).build();
+		
+		final Role connectorLambdaRole = Role.Builder.create(this, args.getPrefixedName("connector-lambda-role"))
+				.roleName(args.getPrefixedName("connector-lambda-role"))
+				.inlinePolicies(Collections.singletonMap(args.getPrefixedName("connector-lambda-policy"),
 						connectorPolicyDocument))
 				.path("/").assumedBy(new ServicePrincipal("lambda.amazonaws.com")).build();
 
-		final PolicyDocument dbconnectorPolicyDocument = PolicyDocument.Builder.create()
-				.statements(Arrays.asList(policyStatement, logStatement)).build();
+		final Role processorLambdaRole = Role.Builder.create(this, args.getPrefixedName("processor-lambda-role"))
+				.roleName(args.getPrefixedName("processor-lambda-role"))
+				.inlinePolicies(Collections.singletonMap(args.getPrefixedName("processor-lambda-policy"),
+						processorPolicyDocument))
+				.path("/").assumedBy(new ServicePrincipal("lambda.amazonaws.com")).build();
 
-		final Role dbconnectorLambdaRole = Role.Builder.create(this, ARGS.getPrefixedName("dbconnector-lambda-role"))
-				.roleName(ARGS.getPrefixedName("dbconnector-lambda-role"))
-				.inlinePolicies(Collections.singletonMap(ARGS.getPrefixedName("dbconnector-lambda-policy"),
+		final Role dbconnectorLambdaRole = Role.Builder.create(this, args.getPrefixedName("dbconnector-lambda-role"))
+				.roleName(args.getPrefixedName("dbconnector-lambda-role"))
+				.inlinePolicies(Collections.singletonMap(args.getPrefixedName("dbconnector-lambda-policy"),
 						dbconnectorPolicyDocument))
 				.path("/").assumedBy(new ServicePrincipal("lambda.amazonaws.com")).build();
 
-		final IVpc vpc = Vpc.fromLookup(this, ARGS.getPrefixedName("vpc"),
-				VpcLookupOptions.builder().isDefault(false).build());
-
-		final SubnetSelection subnetSelection = getSubnetSelection(ARGS);
-		
+		// create event Source for sqs
 		final List<IEventSource> eventSources = new ArrayList<>();
-		eventSources.add(SqsEventSource.Builder.create(queue).batchSize(1).enabled(true).build());
+		eventSources.add(SqsEventSource.Builder.create(queue)
+				.batchSize(1)
+				.enabled(true)
+				.build());
 
+		// create Lambda functions
 		final Map<String, String> envsMap = new HashMap<>();
-		envsMap.put("PROGRAM", ARGS.program);
-		envsMap.put("ENV", ARGS.getProfile());
-		envsMap.put("ACCOUNT_ID", ARGS.getAccountId());
-		envsMap.put("REGION", ARGS.getRegion());
-
-		final Function smsProcessorLambda = Function.Builder.create(this, ARGS.getPrefixedName("processor-lambda"))
-				.functionName(ARGS.getPrefixedName("processor-lambda"))
-				.code(Code.fromBucket(
-						Bucket.fromBucketName(this, "sms-processor", UtilMethods.getCodeBucket(ARGS.getProfile())),
-						ARGS.getProcessorLambdaS3Key()))
-				.environment(envsMap).handler("com.lmig.libertyconnect.sms.processor.handler.LambdaHandler")
-				.role(processorLambdaRole).runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(5))
-				.events(eventSources).build();
-
+		envsMap.put("PROGRAM", args.program);
+		envsMap.put("ENV", args.getProfile());
+		envsMap.put("ACCOUNT_ID", args.getAccountId());
+		envsMap.put("REGION", args.getRegion());
+		
 		envsMap.put("openl_url",
 				"https://dev-east-openl-asiamcm.lmig.com/openl-api/REST/LibertyConnect/LibertyConnect/SMSConfig");
-		final Function smsConnectorLambda = Function.Builder.create(this, ARGS.getPrefixedName("connector-lambda"))
-				.code(Code.fromBucket(
-						Bucket.fromBucketName(this, "sms-connector", UtilMethods.getCodeBucket(ARGS.getProfile())),
-						ARGS.getConnectorLambdaS3Key()))
-				.environment(envsMap).vpc(vpc)
-				// .vpc(Vpc.fromLookup(this, ARGS.getPrefixedName("connector-vpc"),
-				// VpcLookupOptions.builder().isDefault(false).build()))
-				.vpcSubnets(subnetSelection)
-				.securityGroups(Arrays.asList(sg))
-				.functionName(ARGS.getPrefixedName("connector-lambda"))
-				.handler("com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler").role(connectorLambdaRole)
-				.runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(5)).build();
-
+		final Function smsConnectorLambda = createLambdaWithVpc(args.getPrefixedName("connector-lambda"),
+				"com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler",
+				connectorLambdaRole, args.getConnectorLambdaS3Key(), envsMap, null);
 		envsMap.remove("openl_url");
-		envsMap.put("db_host", "intl-sg-apac-liberty-connect-rds-mysql-" + ARGS.getProfile()
-				+ "-dbproxy.proxy-cvluefal1end.ap-southeast-1.rds.amazonaws.com");
+		
+		final Function smsProcessorLambda = createNonVpcLambda(args.getPrefixedName("processor-lambda"),
+				"com.lmig.libertyconnect.sms.processor.handler.LambdaHandler",
+				processorLambdaRole, args.getProcessorLambdaS3Key(), envsMap, eventSources);
+		
+		envsMap.put("db_host", "intl-sg-apac-liberty-connect-rds-mysql-" + args.getProfile()
+		+ "-dbproxy.proxy-cvluefal1end.ap-southeast-1.rds.amazonaws.com");
 		envsMap.put("port", "3306");
 		envsMap.put("secret_id", "apac-liberty-connect-rds-stack/mysql/intl-sg-apac-liberty-connect-rds-mysql-"
-				+ ARGS.getProfile() + "/libcdbuser/libconnnectdb22");
+				+ args.getProfile() + "/libcdbuser/libconnnectdb22");
 		envsMap.put("vpc_endpoint_url_ssm", "intl-cs-sm-vpc-endpoint-url");
 		envsMap.put("db_name", "libertyconnect");
-		final Function smsDbConnectorLambda = Function.Builder.create(this, ARGS.getPrefixedName("dbconnector-lambda"))
-				.code(Code.fromBucket(
-						Bucket.fromBucketName(this, "sms-dbconnector", UtilMethods.getCodeBucket(ARGS.getProfile())),
-						ARGS.getDbConnectorLambdaS3Key()))
-				.environment(envsMap)
-				.vpc(vpc)
-				.vpcSubnets(subnetSelection)				
-				// .securityGroups(
-				// Arrays.asList(SecurityGroup.fromLookupByName(this,
-				// ARGS.getPrefixedName("dbconnector-sg"),
-				// "intl-sg-apac-liberty-connect-Lambda-" + ARGS.getProfile(), vpc)))
-				.securityGroups(Arrays.asList(sg))
-				.functionName(ARGS.getPrefixedName("dbconnector-lambda"))
-				.handler("com.lmig.libertyconnect.sms.updatedb.handler.SMSDBConnectorHandler::handleRequest")
-				// .role(Role.fromRoleName(this,
-				// ARGS.getPrefixedName("dbconnector-lambda-role"),
-				// "apac-liberty-connect-role"))
-				.role(dbconnectorLambdaRole).runtime(Runtime.JAVA_11).memorySize(1024).timeout(Duration.minutes(15))
-				.build();
+		final Function smsDbConnectorLambda = createLambdaWithVpc(args.getPrefixedName("dbconnector-lambda"),
+				"com.lmig.libertyconnect.sms.updatedb.handler.SMSDBConnectorHandler::handleRequest",
+				dbconnectorLambdaRole, args.getDbConnectorLambdaS3Key(), envsMap, null);
+		
+		// Create SSM parameter for vietguys
+		createSSM("viet_guys-cred", smsProcessorLambda);
+
+		// Create SSM parameter for dtac
+		createSSM("dtac-cred", smsProcessorLambda);
 
 		// Create Topic
-		final Topic responseTopic = Topic.Builder.create(this, ARGS.getPrefixedName("response-topic"))
-				.topicName(ARGS.getPrefixedName("response-topic")).masterKey(smsStackKey).build();
+		final Topic responseTopic = createTopic(args.getPrefixedName("response-topic"), smsStackKey);
 
 		// Create step function to invoke dbConnector Lambda and send response to sns
 		final PolicyStatement sfnStatement = PolicyStatement.Builder.create().effect(Effect.ALLOW)
-				.actions(Arrays.asList("kms:Decrypt", "kms:GenerateDataKey", "sts:AssumeRole"))
+				.actions(Arrays.asList("sts:AssumeRole"))
 				.resources(Arrays.asList("*")).build();
 
 		final PolicyDocument stateMachinePolicyDocument = PolicyDocument.Builder.create()
-				.statements(Arrays.asList(sfnStatement)).build();
+				.statements(Arrays.asList(sfnStatement, kmsStatement)).build();
 
-		final Role stateMachineRole = Role.Builder.create(this, ARGS.getPrefixedName("statemachine-role"))
-				.roleName(ARGS.getPrefixedName("statemachine-role"))
+		final Role stateMachineRole = Role.Builder.create(this, args.getPrefixedName("statemachine-role"))
+				.roleName(args.getPrefixedName("statemachine-role"))
 				.inlinePolicies(
-						Collections.singletonMap(ARGS.getPrefixedName("lc-sfn-policy"), stateMachinePolicyDocument))
+						Collections.singletonMap(args.getPrefixedName("lc-sfn-policy"), stateMachinePolicyDocument))
 				.path("/").assumedBy(new ServicePrincipal("states.amazonaws.com")).build();
 
 		final Map<String, String> snsMsgFieldsMap = new HashMap<>();
 		snsMsgFieldsMap.put("client_reference_number", JsonPath.stringAt("$.client_reference_number"));
 		snsMsgFieldsMap.put("uuid", JsonPath.stringAt("$.uuid"));
 		snsMsgFieldsMap.put("response", JsonPath.stringAt("$.response"));
-		final Parallel parallelStates = new Parallel(this, ARGS.getPrefixedName("parallel"))
-				.branch(LambdaInvoke.Builder.create(this, ARGS.getPrefixedName("dbconnector-lambda-task"))
+		final Parallel parallelStates = new Parallel(this, args.getPrefixedName("parallel"))
+				.branch(LambdaInvoke.Builder.create(this, args.getPrefixedName("dbconnector-lambda-task"))
 						.lambdaFunction(smsDbConnectorLambda).build())
-				.branch(SnsPublish.Builder.create(this, ARGS.getPrefixedName("publish-task")).topic(responseTopic)
+				.branch(SnsPublish.Builder.create(this, args.getPrefixedName("publish-task")).topic(responseTopic)
 						.message(TaskInput.fromObject(snsMsgFieldsMap)).build());
 
-		final StateMachine stateMachine = StateMachine.Builder.create(this, ARGS.getPrefixedName("statemachine"))
-				.stateMachineName(ARGS.getPrefixedName("statemachine")).definition(parallelStates)
+		final StateMachine stateMachine = StateMachine.Builder.create(this, args.getPrefixedName("statemachine"))
+				.stateMachineName(args.getPrefixedName("statemachine")).definition(parallelStates)
 				.role(stateMachineRole).build();
-
-		// Create SSM parameter for vietguys
-		StringParameter vietGuysparam = StringParameter.Builder.create(this, ARGS.getPrefixedName("viet_guys-ssm"))
-				.parameterName(ARGS.getPrefixedName("viet_guys-cred"))
-				.stringValue(new String(Base64.encodeBase64(ARGS.getVietguyPass().getBytes()))).build();
-		vietGuysparam.grantRead(smsProcessorLambda);
-
-		// Create SSM parameter for dtac
-		StringParameter dtacParam = StringParameter.Builder.create(this, ARGS.getPrefixedName("dtac-ssm"))
-				.parameterName(ARGS.getPrefixedName("dtac-cred"))
-				.stringValue(new String(Base64.encodeBase64(ARGS.getDtacPass().getBytes()))).build();
-		dtacParam.grantRead(smsProcessorLambda);
+		
 
 		// Create Rest API Gateway
+		createSMSApiGateway(smsDbConnectorLambda);
+
+	}
+	
+	public Function createNonVpcLambda(final String name, final String handler, final Role role,
+			final String codeBucketKey, final Map<String, String> envsMap,
+			final List<IEventSource> eventSources) {
+		Function.Builder builder = Function.Builder.create(this, args.getPrefixedName(name))
+				.code(Code.fromBucket(
+						Bucket.fromBucketName(this, name, UtilMethods.getCodeBucket(args.getProfile())),
+					codeBucketKey))
+				.environment(envsMap)
+				.functionName(name)
+				.handler(handler)
+				.role(role)
+				.runtime(Runtime.JAVA_11)
+				.memorySize(1024)
+				.timeout(Duration.minutes(5));
+		if (eventSources!= null && !eventSources.isEmpty()) {
+			builder.events(eventSources);
+		}
+		return builder.build();
+	}
+	
+	public Function createLambdaWithVpc(final String name, final String handler,
+			final Role role, final String codeBucketKey, final Map<String, String> envsMap, 
+			final List<IEventSource> eventSources) {
+		
+		Function.Builder builder = Function.Builder.create(this, args.getPrefixedName(name))
+					.code(Code.fromBucket(
+							Bucket.fromBucketName(this, name, UtilMethods.getCodeBucket(args.getProfile())),
+						codeBucketKey))
+					.environment(envsMap)
+					.vpc(vpc)
+					.vpcSubnets(subnetSelection)
+					.securityGroups(Arrays.asList(sg))
+					.functionName(name)
+					.handler(handler)
+					.role(role)
+					.runtime(Runtime.JAVA_11)
+					.memorySize(1024)
+					.timeout(Duration.minutes(5));
+		if (eventSources!= null && !eventSources.isEmpty()) {
+			builder.events(eventSources);
+		}
+		return builder.build();
+					
+	}
+	
+	public Topic createTopic(final String name, final Key key) {
+		return Topic.Builder
+				.create(this, name)
+				.topicName(name)
+				.masterKey(key)
+				.build();
+	}
+	
+	public StringParameter createSSM(final String parameterName, final Function lambda) {
+		StringParameter stringParameter = StringParameter.Builder.create(this, args.getPrefixedName(parameterName))
+				.parameterName(args.getPrefixedName(parameterName))
+				.stringValue(new String(Base64.encodeBase64(args.getVietguyPass().getBytes()))).build();
+		stringParameter.grantRead(lambda);
+		return stringParameter;
+	}
+	
+	public void createSMSApiGateway(final Function lambda) {
 		final PolicyStatement apiStatement = PolicyStatement.Builder.create()
 				.effect(Effect.ALLOW)
 				.actions(Arrays.asList("execute-api:Invoke"))
 				.resources(Arrays.asList("*")).build();
 		apiStatement.addAnyPrincipal();
-
-		final PolicyDocument apiPolicyDocument = PolicyDocument.Builder.create().statements(Arrays.asList(apiStatement))
+		
+		String vpcEndpointId = null;
+		EndpointConfiguration endpointConfiguration;
+		
+		if ("dev".equals(args.getProfile())) {
+			vpcEndpointId = "vpce-0e92b0a49754e7f59";
+		} else if ("nonprod".equals(args.getProfile())) {
+			vpcEndpointId = "vpce-0ad8d2b2c5e1e404f";
+		} else if ("prod".equals(args.getProfile())) {
+			vpcEndpointId = "vpce-06a18f15c9b645f6e";
+		}
+		
+		if (StringUtils.isNullOrEmpty(vpcEndpointId)) {
+			final List<IInterfaceVpcEndpoint> endpointList = Arrays.asList(InterfaceVpcEndpoint
+					.fromInterfaceVpcEndpointAttributes(this, "connector-vpc-1", 
+							InterfaceVpcEndpointAttributes.builder()
+							.vpcEndpointId(vpcEndpointId)	    
+							.build()));
+			
+			endpointConfiguration = EndpointConfiguration.builder()
+					.types(Arrays.asList(EndpointType.PRIVATE))
+					.vpcEndpoints(endpointList)
+					.build();
+		} else {
+			endpointConfiguration = EndpointConfiguration.builder()
+				.types(Arrays.asList(EndpointType.PRIVATE))
+				.build();
+		}
+		
+		final PolicyDocument apiPolicyDocument = PolicyDocument.Builder.create()
+				.statements(Arrays.asList(apiStatement))
 				.build();
 
-		final RestApi api = RestApi.Builder.create(this, ARGS.getPrefixedName("gateway"))
-				.restApiName(ARGS.getPrefixedName("api"))
-				.endpointConfiguration(
-						EndpointConfiguration.builder().types(Arrays.asList(EndpointType.PRIVATE)).build())
-				.policy(apiPolicyDocument).deployOptions(StageOptions.builder().stageName(ARGS.getProfile()).build())
+		final RestApi api = RestApi.Builder.create(this, args.getPrefixedName("gateway"))
+				.restApiName(args.getPrefixedName("api"))
+				.endpointConfiguration(endpointConfiguration)	
+				.policy(apiPolicyDocument).deployOptions(StageOptions.builder()
+						.stageName(args.getProfile())
+						.build())
 				.cloudWatchRole(false)
 				.build();
 		
-		final Resource smsResource = api.getRoot().addResource(Constants.SERVICE_NAME);
-		final LambdaIntegration getWidgetIntegration = LambdaIntegration.Builder.create(smsConnectorLambda).build();
+		final Resource smsResource = api.getRoot().addResource(
+				Constants.SMS_CONNECTOR_API_VERSION 
+				+ "/" + Constants.SERVICE_NAME);
+		final LambdaIntegration getWidgetIntegration = LambdaIntegration.Builder.create(lambda).build();
 
 		smsResource.addMethod("POST", getWidgetIntegration);
-
 	}
 
 	private PolicyDocument getPolicyDocument() {
@@ -279,16 +377,15 @@ public class LcSmsStack extends Stack {
 		return iamUserPermission;
 	}
 	
-	private SubnetSelection getSubnetSelection(final Args ARGS) {
-		SubnetSelection subnetSelection;
-		if ("dev".equals(ARGS.getProfile())) {
+	private SubnetSelection getSubnetSelection() {
+		if ("dev".equals(args.getProfile())) {
 			subnetSelection = SubnetSelection.builder()
 					.subnets(Arrays.asList(Subnet
-							.fromSubnetId(this, "subnet-1", "subnet-ea5a228d"),
+							.fromSubnetId(this, "subnet-1", "subnet-03253fd03bbc9fd46"),
 							Subnet.fromSubnetId(this, "subnet-2", "subnet-bd056df4")))
 					.onePerAz(true)
 					.build();
-		} else if ("nonprod".equals(ARGS.getProfile())) {
+		} else if ("nonprod".equals(args.getProfile())) {
 			subnetSelection = SubnetSelection.builder()
 					.subnets(Arrays.asList(Subnet
 							.fromSubnetId(this, "subnet-1", "subnet-0f78eac9f959cce02"),
