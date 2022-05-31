@@ -342,7 +342,7 @@ public class LcSmsStack extends Stack {
 				.restApiName(args.getPrefixedName("api"))
 				.endpointConfiguration(endpointConfiguration)	
 				.policy(apiPolicyDocument).deployOptions(StageOptions.builder()
-						.stageName(args.getProfile() + "/" + Constants.SMS_CONNECTOR_API_VERSION)
+						.stageName(Constants.SMS_CONNECTOR_API_VERSION)
 						.build())
 				.cloudWatchRole(false)
 				.build();
