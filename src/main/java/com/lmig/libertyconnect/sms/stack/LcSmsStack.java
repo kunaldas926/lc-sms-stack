@@ -230,7 +230,7 @@ public class LcSmsStack extends Stack {
 		
 
 		// Create Rest API Gateway
-		createSMSApiGateway(smsDbConnectorLambda);
+		createSMSApiGateway(smsConnectorLambda);
 
 	}
 	
