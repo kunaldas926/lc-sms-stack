@@ -315,15 +315,7 @@ public class LcSmsStack extends Stack {
 		}		
 		
 		if (!StringUtils.isNullOrEmpty(vpcEndpointId)) {
-			final List<IGatewayVpcEndpoint> endpointList = Arrays.asList(GatewayVpcEndpoint.fromGatewayVpcEndpointId(this, "connector-endpoint-1", vpcEndpointId));
-					
-					/* InterfaceVpcEndpoint
-					.fromInterfaceVpcEndpointAttributes(this, "connector-vpc-1", 
-							InterfaceVpcEndpointAttributes.builder()
-							.vpcEndpointId(vpcEndpointId)
-							.port(80)
-							.build())); */
-			
+			final List<IGatewayVpcEndpoint> endpointList = Arrays.asList(GatewayVpcEndpoint.fromGatewayVpcEndpointId(this, "connector-endpoint-1", vpcEndpointId));	
 			endpointConfiguration = EndpointConfiguration.builder()
 					.types(Arrays.asList(EndpointType.PRIVATE))
 					.vpcEndpoints(endpointList)
@@ -382,7 +374,7 @@ public class LcSmsStack extends Stack {
 		if ("dev".equals(args.getProfile())) {
 			subnetSelection = SubnetSelection.builder()
 					.subnets(Arrays.asList(Subnet
-							.fromSubnetId(this, "subnet-1", "subnet-03253fd03bbc9fd46"),
+							.fromSubnetId(this, "subnet-1", "subnet-ea5a228d"),
 							Subnet.fromSubnetId(this, "subnet-2", "subnet-bd056df4")))
 					.onePerAz(true)
 					.build();
@@ -394,6 +386,8 @@ public class LcSmsStack extends Stack {
 					.onePerAz(true)
 					.build();
 		} else {
+
+			// TODO: Add subnet ID for prod
 			subnetSelection = SubnetSelection.builder()
 					.onePerAz(true)
 					.build();
