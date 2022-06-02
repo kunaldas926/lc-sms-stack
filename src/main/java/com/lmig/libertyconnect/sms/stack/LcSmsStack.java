@@ -98,6 +98,7 @@ public class LcSmsStack extends Stack {
 				.encryption(QueueEncryption.KMS_MANAGED)
 				.visibilityTimeout(Duration.minutes(6))
 				.build();
+		queue.addToResourcePolicy(getQueueResourcePolicy());
 		
 		// Create Topic
 		final Topic responseTopic = createTopic(args.getPrefixedName("response-topic"), smsStackKey);
@@ -353,7 +354,7 @@ public class LcSmsStack extends Stack {
 	private PolicyDocument getPolicyDocument() {
 
 		final PolicyDocument policyDocument = new PolicyDocument();
-		policyDocument.addStatements(getSnsStatement());//, getIamPolicyStatement());
+		policyDocument.addStatements(getSnsStatement(), getIamPolicyStatement());
 		return policyDocument;
 	}
 
@@ -415,6 +416,24 @@ public class LcSmsStack extends Stack {
 				.build();	
 	}
 
+	public PolicyStatement getQueueResourcePolicy() {
+
+        final PolicyStatement policyStatement = new PolicyStatement();
+        policyStatement.addActions("sqs:SendMessage");
+        policyStatement.addAnyPrincipal();
+        policyStatement.addCondition(
+                "StringLike", Collections.singletonMap("aws:PrincipalArn", "arn:aws:lambda:" + args.getRegion() + ":" + args.getAccountId() + ":function:"
+                		+ args.getProgram()
+                		+ "-"
+                		+ args.getProfile()
+                		+ "-"
+                		+ Constants.PROJECT_NAME
+                		+ "-"
+                		+ Constants.SERVICE_NAME
+                		+ "-"
+                		+ "*"));
+        return policyStatement;
+    }
 	private PolicyStatement getIamPolicyStatement() {
 		// TODO: we might not need this
 		final PolicyStatement iamUserPermission = new PolicyStatement();
