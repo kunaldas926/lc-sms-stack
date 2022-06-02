@@ -118,6 +118,11 @@ public final class LcSmsStackApp {
 	    	} else {
 	    		return String.format("%s%s%s%s%s%s%s%s%s", this.program, "-", this.profile, "-", Constants.PROJECT_NAME, "-", Constants.SERVICE_NAME, "-", name);	 
 	    	}
-    	}  		
+    	}
+    	
+    	public String getPrefixedAPIName() {
+
+	    	return String.format("%s%s%s%s%s%s%s", this.program, "-", this.profile, "-", "libertyconnect", "-", Constants.SERVICE_NAME);	 
+    	}
     }
 }
