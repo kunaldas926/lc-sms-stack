@@ -33,6 +33,7 @@ import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.iam.Effect;
+import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyDocument;
 import software.amazon.awscdk.services.iam.PolicyStatement;
@@ -139,8 +140,8 @@ public class LcSmsStack extends Stack {
 				.build();
 		envsMap.putAll(UtilMethods.getDBEnvVars(args.getProfile()));
 		final Function smsDbConnectorLambda = createLambdaWithVpc(args.getPrefixedName("dbconnector-lambda"),
-				"com.lmig.libertyconnect.sms.updatedb.handler.SMSDBConnectorHandler::handleRequest",
-				dbconnectorLambdaRole, args.getDbConnectorLambdaS3Key(), envsMap, null);
+				"com.lmig.libertyconnect.sms.dbconnector.handler.SMSDBConnectorHandler",
+				Role.fromRoleName(this, args.getPrefixedName("db-liberty-connect-role"), "apac-liberty-connect-role"), args.getDbConnectorLambdaS3Key(), envsMap, null);
 		envsMap.remove("db_host");
 		envsMap.remove("port");
 		envsMap.remove("secret_id");
@@ -203,7 +204,7 @@ public class LcSmsStack extends Stack {
 	}
 	
 	public Function createLambdaWithVpc(final String name, final String handler,
-			final Role role, final String codeBucketKey, final Map<String, String> envsMap, 
+			final IRole role, final String codeBucketKey, final Map<String, String> envsMap, 
 			final List<IEventSource> eventSources) {
 		
 		Function.Builder builder = Function.Builder.create(this, name)
@@ -213,7 +214,6 @@ public class LcSmsStack extends Stack {
 					.environment(envsMap)
 					.vpc(vpc)
 					.vpcSubnets(subnetSelection)
-					.securityGroups(Arrays.asList(sg))
 					.functionName(name)
 					.handler(handler)
 					.role(role)
@@ -227,7 +227,7 @@ public class LcSmsStack extends Stack {
 		if (args.getPrefixedName("dbconnector-lambda").equals(name)) {
 			builder.securityGroups(Arrays.asList(SecurityGroup.fromLookupByName(this,
 					args.getPrefixedName("dbconnector-sg"),
-					"intl-sg-apac-liberty-connect-Lambda-" + args.getProfile(),
+					"intl-sg-" + args.getProfile() + "-apac-liberty-connect-Lambda",
 					vpc)));
 		} else {
 			builder.securityGroups(Arrays.asList(sg));
