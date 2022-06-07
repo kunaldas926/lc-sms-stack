@@ -39,7 +39,6 @@ public class LcSmsStackTest {
                         .build()).build(), ARGS);
 
 		JsonNode actual = JSON.valueToTree(app.synth().getStackArtifact(stack.getArtifactId()).getTemplate());
-		System.out.println(actual);
 		assertEquals("test-local-lc-sms-stack", stack.getStackName());
 		assertTrue(actual.toString().contains("AWS::SQS::Queue"));
 		assertTrue(actual.toString().contains("AWS::Lambda::Function"));

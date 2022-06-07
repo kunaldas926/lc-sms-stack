@@ -9,7 +9,6 @@ import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
 
-import com.amazonaws.services.stepfunctions.builder.states.State;
 import com.amazonaws.util.StringUtils;
 import com.lmig.libertyconnect.sms.stack.LcSmsStackApp.Args;
 import com.lmig.libertyconnect.sms.stack.utils.Constants;
@@ -120,7 +119,7 @@ public class LcSmsStack extends Stack {
 				.assumedBy(new ServicePrincipal("lambda.amazonaws.com"))
 				.build();		
 		envsMap.put("openl_url",
-				"https://dev-east-openl-asiamcm.lmig.com/openl-api/REST/LibertyConnect/LibertyConnect/SMSConfig");
+				UtilMethods.getOpenUrl(args.getProfile()));
 		final Function smsConnectorLambda = createLambdaWithVpc(args.getPrefixedName("connector-lambda"),
 				"com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler",
 				connectorLambdaRole, args.getConnectorLambdaS3Key(), envsMap, null);
@@ -138,13 +137,7 @@ public class LcSmsStack extends Stack {
 				.path("/")
 				.assumedBy(new ServicePrincipal("lambda.amazonaws.com"))
 				.build();
-		envsMap.put("db_host", "intl-sg-apac-liberty-connect-rds-mysql-" + args.getProfile()
-		+ "-dbproxy.proxy-cvluefal1end.ap-southeast-1.rds.amazonaws.com");
-		envsMap.put("port", "3306");
-		envsMap.put("secret_id", "apac-liberty-connect-rds-stack/mysql/intl-sg-apac-liberty-connect-rds-mysql-"
-				+ args.getProfile() + "/libcdbuser/libconnnectdb22");
-		envsMap.put("vpc_endpoint_url_ssm", "intl-cs-sm-vpc-endpoint-url");
-		envsMap.put("db_name", "libertyconnect");
+		envsMap.putAll(UtilMethods.getDBEnvVars(args.getProfile()));
 		final Function smsDbConnectorLambda = createLambdaWithVpc(args.getPrefixedName("dbconnector-lambda"),
 				"com.lmig.libertyconnect.sms.updatedb.handler.SMSDBConnectorHandler::handleRequest",
 				dbconnectorLambdaRole, args.getDbConnectorLambdaS3Key(), envsMap, null);
@@ -229,6 +222,15 @@ public class LcSmsStack extends Stack {
 					.timeout(Duration.minutes(5));
 		if (eventSources!= null && !eventSources.isEmpty()) {
 			builder.events(eventSources);
+		}
+		
+		if (args.getPrefixedName("dbconnector-lambda").equals(name)) {
+			builder.securityGroups(Arrays.asList(SecurityGroup.fromLookupByName(this,
+					args.getPrefixedName("dbconnector-sg"),
+					"intl-sg-apac-liberty-connect-Lambda-" + args.getProfile(),
+					vpc)));
+		} else {
+			builder.securityGroups(Arrays.asList(sg));
 		}
 		return builder.build();
 					
@@ -435,7 +437,6 @@ public class LcSmsStack extends Stack {
         return policyStatement;
     }
 	private PolicyStatement getIamPolicyStatement() {
-		// TODO: we might not need this
 		final PolicyStatement iamUserPermission = new PolicyStatement();
 		iamUserPermission.addActions("kms:*");
 		iamUserPermission.addAccountRootPrincipal();
