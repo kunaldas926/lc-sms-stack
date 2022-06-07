@@ -16,8 +16,8 @@ public class Constants {
 
 	// DB related constants
 	// TODO : Move to prop file
-	public static final String DEV_DB_HOST = "intl-sg-apac-liberty-connect-dev-rds-mysql-dev-dbproxy.proxy-cvluefal1end.ap-southeast-1.rds.amazonaws.com";
-	public static final String DEV_SECRET_ID = "intl-reg-apac-liberty-connect-rds1-dev/mysql/intl-sg-apac-liberty-connect-dev-rds-mysql-dev/lcdevrdsmstrusr/libertyconnectdevrds";
+	public static final String DEV_DB_HOST = "intl-sg-apac-liberty-connect-rds-mysql-dev-dbproxy.proxy-cvluefal1end.ap-southeast-1.rds.amazonaws.com";
+	public static final String DEV_SECRET_ID = "intl-reg-apac-liberty-connect-rds1-dev/mysql/intl-sg-apac-liberty-connect-rds-mysql-dev/lcdevrdsmstrusr/libertyconnectdevrds";
 	public static final String NONPROD_DB_HOST = "intl-sg-apac-liberty-connect-rds-mysql-nonprod-dbproxy.proxy-ch6anygktrim.ap-southeast-1.rds.amazonaws.com";
 	public static final String NONPROD_SECRET_ID = "intl-reg-apac-liberty-connect-rds1-nonprod/mysql/intl-sg-apac-liberty-connect-rds-mysql-nonprod/libconrdsmstrusr/libertyconnectnonprodrds";
 	// TODO: Add correct values after rds stack is deployed to prod
