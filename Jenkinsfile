@@ -67,7 +67,6 @@ def deployCdk(currentEnv, accountId, region) {
 			-processorLambdaS3Key ${params.PROCESSOR_LAMBDA_S3_KEY} \
 			-dbConnectorLambdaS3Key ${params.DB_CONNECTOR_LAMBDA_S3_KEY} \
 			-retryLambdaS3Key ${params.RETRY_LAMBDA_S3_KEY} \
-			-LambdaS3Key ${params.DB_CONNECTOR_LAMBDA_S3_KEY} \
 			-vietguyPass ${params.VIETGUYS_PASS} \
 			-dtacPass ${params.DTAC_PASS} \
 			-accountId ${accountId} \
