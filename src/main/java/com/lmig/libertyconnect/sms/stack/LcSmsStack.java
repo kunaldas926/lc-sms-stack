@@ -152,7 +152,7 @@ public class LcSmsStack extends Stack {
 		final PolicyDocument retryPolicyDocument = PolicyDocument.Builder.create()
 						.statements(Arrays.asList(getKmsStatement(), getSecretManagerStatement(), getLogStatement(), getNetworkStatement())).build();
 		final Role retryLambdaRole = Role.Builder.create(this, args.getPrefixedName("retry-lambda-role"))
-						.roleName(args.getPrefixedName("dbconnector-lambda-role"))
+						.roleName(args.getPrefixedName("retry-lambda-role"))
 						.inlinePolicies(Collections.singletonMap(args.getPrefixedName("retry-lambda-policy"),
 								retryPolicyDocument))
 						.path("/")
