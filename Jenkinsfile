@@ -29,6 +29,12 @@ properties([
         ),
         
         string(
+            defaultValue: "code/sms/sms-retry-lambda-0.0.1-SNAPSHOT.jar",
+            description: 'bucket key for lambda jar',
+            name: 'RETRY_LAMBDA_S3_KEY'          
+        ),
+        
+        string(
             defaultValue: "code/sms/sms-dbconnector-lambda-0.0.1-SNAPSHOT.jar",
             description: 'bucket key for lambda jar',
             name: 'DB_CONNECTOR_LAMBDA_S3_KEY'
@@ -53,8 +59,6 @@ static def getEnvFromBuildPath(jobPath) {
 
 def deployCdk(currentEnv, accountId, region) {
     echo "Stack deployment starting..."
-    // TODO: Mention version here
-    sh "npm install -g aws-cdk@2.24.1"
     sh "cdk deploy --require-approval=never --app='java -jar ./target/sms-stack-0.0.1-SNAPSHOT.jar \
 			-profile ${currentEnv} \
 			-lm_troux_uid ${params.TROUX_UID} \
@@ -62,6 +66,8 @@ def deployCdk(currentEnv, accountId, region) {
 			-connectorLambdaS3Key ${params.CONNECTOR_LAMBDA_S3_KEY} \
 			-processorLambdaS3Key ${params.PROCESSOR_LAMBDA_S3_KEY} \
 			-dbConnectorLambdaS3Key ${params.DB_CONNECTOR_LAMBDA_S3_KEY} \
+			-retryLambdaS3Key ${params.RETRY_LAMBDA_S3_KEY} \
+			-LambdaS3Key ${params.DB_CONNECTOR_LAMBDA_S3_KEY} \
 			-vietguyPass ${params.VIETGUYS_PASS} \
 			-dtacPass ${params.DTAC_PASS} \
 			-accountId ${accountId} \
@@ -75,6 +81,10 @@ node('linux') {
     }
 
     stage('Build ') {
+        sh "npm install -g aws-cdk@2.24.1"
+    	sh "npm install -g n@8.2.0"
+    	sh "n 16.15.1"
+    	sh "mvn clean install"
     	sh "mvn clean install"
     }
     

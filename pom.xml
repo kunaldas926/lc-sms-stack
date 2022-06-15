@@ -56,14 +56,19 @@
 			<version>${cdk.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk</artifactId>
-			<version>1.11.163</version>
+		    <groupId>software.amazon.awscdk</groupId>
+		    <artifactId>events-targets</artifactId>
+		    <version>${cdk.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>software.amazon.awscdk</groupId>
 			<artifactId>lambda-event-sources</artifactId>
 			<version>${cdk.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk</artifactId>
+			<version>1.11.163</version>
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>

@@ -25,6 +25,7 @@ public class LcSmsStackTest {
 				.processorLambdaS3Key("code/sms-processor-0.0.1-SNAPSHOT.jar")
 				.connectorLambdaS3Key("code/sms-connector-0.0.1-SNAPSHOT.jar")
 				.dbConnectorLambdaS3Key("code/sms-db-connector-0.0.1-SNAPSHOT.jar")
+				.retryLambdaS3Key("code/sms/sms-retry-lambda-0.0.1-SNAPSHOT.jar")
 				.dtacPass("dummy")
 				.vietguyPass("dummy")
 				.accountId("01234567891011")
@@ -42,6 +43,7 @@ public class LcSmsStackTest {
 		assertEquals("test-local-lc-sms-stack", stack.getStackName());
 		assertTrue(actual.toString().contains("AWS::SQS::Queue"));
 		assertTrue(actual.toString().contains("AWS::Lambda::Function"));
+		assertTrue(actual.toString().contains("AWS::Events::Rule"));
 		assertTrue(actual.toString().contains("AWS::ApiGateway::RestApi"));
 		assertTrue(actual.toString().contains("AWS::SSM::Parameter"));
 		assertTrue(actual.toString().contains("AWS::SNS::Topic"));

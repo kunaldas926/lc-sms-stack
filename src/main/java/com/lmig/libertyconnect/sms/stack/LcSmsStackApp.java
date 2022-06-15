@@ -99,6 +99,13 @@ public final class LcSmsStackApp {
         private String dbConnectorLambdaS3Key;
         
         @Parameter(
+                names = {"-retryLambdaS3Key"},
+                description = "Required: bucket key for retry Lambda",
+                required = true
+        )
+        private String retryLambdaS3Key;
+        
+        @Parameter(
                 names = {"-vietguyPass"},
                 description = "Required: vietguys credential",
                 required = true          

@@ -32,6 +32,10 @@ import software.amazon.awscdk.services.ec2.Subnet;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
+import software.amazon.awscdk.services.events.CronOptions;
+import software.amazon.awscdk.services.events.Rule;
+import software.amazon.awscdk.services.events.Schedule;
+import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
@@ -123,7 +127,7 @@ public class LcSmsStack extends Stack {
 				UtilMethods.getOpenUrl(args.getProfile()));
 		final Function smsConnectorLambda = createLambdaWithVpc(args.getPrefixedName("connector-lambda"),
 				"com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler",
-				connectorLambdaRole, args.getConnectorLambdaS3Key(), envsMap, null);
+				connectorLambdaRole, args.getConnectorLambdaS3Key(), 5, envsMap, null);
 		envsMap.remove("openl_url");
 		
 		// create DB Connector Lambda
@@ -141,7 +145,22 @@ public class LcSmsStack extends Stack {
 		envsMap.putAll(UtilMethods.getDBEnvVars(args.getProfile()));
 		final Function smsDbConnectorLambda = createLambdaWithVpc(args.getPrefixedName("dbconnector-lambda"),
 				"com.lmig.libertyconnect.sms.dbconnector.handler.SMSDBConnectorHandler",
-				Role.fromRoleName(this, args.getPrefixedName("db-liberty-connect-role"), "apac-liberty-connect-role"), args.getDbConnectorLambdaS3Key(), envsMap, null);
+				Role.fromRoleName(this, args.getPrefixedName("db-liberty-connect-role"), "apac-liberty-connect-role"), args.getDbConnectorLambdaS3Key(), 5,
+				envsMap, null);
+		
+		// create retry Lambda
+		final PolicyDocument retryPolicyDocument = PolicyDocument.Builder.create()
+						.statements(Arrays.asList(getKmsStatement(), getSecretManagerStatement(), getLogStatement(), getNetworkStatement())).build();
+		final Role retryLambdaRole = Role.Builder.create(this, args.getPrefixedName("retry-lambda-role"))
+						.roleName(args.getPrefixedName("dbconnector-lambda-role"))
+						.inlinePolicies(Collections.singletonMap(args.getPrefixedName("retry-lambda-policy"),
+								retryPolicyDocument))
+						.path("/")
+						.assumedBy(new ServicePrincipal("lambda.amazonaws.com"))
+						.build();
+		final Function smsRetryLambda = createLambdaWithVpc(args.getPrefixedName("retry-lambda"),
+				"com.lmig.libertyconnect.sms.retry.handler.LambdaHandler",
+				Role.fromRoleName(this, args.getPrefixedName("retry-liberty-connect-role"), "apac-liberty-connect-role"), args.getRetryLambdaS3Key(), 15, envsMap, null);
 		envsMap.remove("db_host");
 		envsMap.remove("port");
 		envsMap.remove("secret_id");
@@ -169,8 +188,10 @@ public class LcSmsStack extends Stack {
 				.build());
 		final Function smsProcessorLambda = createNonVpcLambda(args.getPrefixedName("processor-lambda"),
 				"com.lmig.libertyconnect.sms.processor.handler.LambdaHandler",
-				processorLambdaRole, args.getProcessorLambdaS3Key(), envsMap, eventSources);
-				
+				processorLambdaRole, args.getProcessorLambdaS3Key(), 5, envsMap, eventSources);
+		
+		// create scheduler for retry lambda
+		createLambdaScheduler(smsRetryLambda);
 		
 		// Create SSM parameter for vietguys
 		createSSM("viet_guys-ssm","viet_guys-cred", args.getVietguyPass(), smsProcessorLambda);
@@ -184,7 +205,7 @@ public class LcSmsStack extends Stack {
 	}
 	
 	public Function createNonVpcLambda(final String name, final String handler, final Role role,
-			final String codeBucketKey, final Map<String, String> envsMap,
+			final String codeBucketKey, final int timeout, final Map<String, String> envsMap,
 			final List<IEventSource> eventSources) {
 		Function.Builder builder = Function.Builder.create(this, name)
 				.code(Code.fromBucket(
@@ -196,7 +217,7 @@ public class LcSmsStack extends Stack {
 				.role(role)
 				.runtime(Runtime.JAVA_11)
 				.memorySize(1024)
-				.timeout(Duration.minutes(5));
+				.timeout(Duration.minutes(timeout));
 		if (eventSources!= null && !eventSources.isEmpty()) {
 			builder.events(eventSources);
 		}
@@ -204,7 +225,7 @@ public class LcSmsStack extends Stack {
 	}
 	
 	public Function createLambdaWithVpc(final String name, final String handler,
-			final IRole role, final String codeBucketKey, final Map<String, String> envsMap, 
+			final IRole role, final String codeBucketKey, final int timeout, final Map<String, String> envsMap, 
 			final List<IEventSource> eventSources) {
 		
 		Function.Builder builder = Function.Builder.create(this, name)
@@ -219,7 +240,7 @@ public class LcSmsStack extends Stack {
 					.role(role)
 					.runtime(Runtime.JAVA_11)
 					.memorySize(1024)
-					.timeout(Duration.minutes(5));
+					.timeout(Duration.minutes(timeout));
 		if (eventSources!= null && !eventSources.isEmpty()) {
 			builder.events(eventSources);
 		}
@@ -234,6 +255,14 @@ public class LcSmsStack extends Stack {
 		}
 		return builder.build();
 					
+	}
+	
+	public Rule createLambdaScheduler(final Function lambda) {
+		return Rule.Builder.create(this, "cdk-lambda-cron-rule")
+		            .description("Run ")
+		            .schedule(Schedule.cron(CronOptions.builder().minute("20").build()))
+		            .targets(Arrays.asList(LambdaFunction.Builder.create(lambda).build()))
+		            .build();
 	}
 	
 	public StateMachine createStateMachine(final Topic topic,
