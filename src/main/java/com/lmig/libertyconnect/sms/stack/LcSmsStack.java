@@ -191,7 +191,7 @@ public class LcSmsStack extends Stack {
 				processorLambdaRole, args.getProcessorLambdaS3Key(), 5, envsMap, eventSources);
 		
 		// create scheduler for retry lambda
-		createLambdaScheduler(smsRetryLambda);
+		createLambdaScheduler(args.getPrefixedName("retry-lambda-cron-rule"), smsRetryLambda);
 		
 		// Create SSM parameter for vietguys
 		createSSM("viet_guys-ssm","viet_guys-cred", args.getVietguyPass(), smsProcessorLambda);
@@ -257,9 +257,9 @@ public class LcSmsStack extends Stack {
 					
 	}
 	
-	public Rule createLambdaScheduler(final Function lambda) {
-		return Rule.Builder.create(this, "cdk-lambda-cron-rule")
-		            .description("Run ")
+	public Rule createLambdaScheduler(final String name, final Function lambda) {
+		return Rule.Builder.create(this, name)
+		            .description("Run retry lambda")
 		            .schedule(Schedule.cron(CronOptions.builder().minute("20").build()))
 		            .targets(Arrays.asList(LambdaFunction.Builder.create(lambda).build()))
 		            .build();
