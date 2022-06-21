@@ -51,6 +51,7 @@ import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.sns.Topic;
+import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.amazon.awscdk.services.sqs.QueueEncryption;
 import software.amazon.awscdk.services.ssm.StringParameter;
@@ -93,12 +94,24 @@ public class LcSmsStack extends Stack {
 
 		subnetSelection = getSubnetSelection();
 		
+		//Create DLQ
+		final Queue dlq = Queue.Builder.create(this, args.getPrefixedName("dlq.fifo"))
+				.queueName(args.getPrefixedName("dlq.fifo"))
+				.fifo(true)
+				.encryption(QueueEncryption.KMS_MANAGED)
+				.visibilityTimeout(Duration.minutes(6))
+				.build();
+		
 		// create queue
 		final String queueName = args.getPrefixedName("queue.fifo");
 		final Queue queue = Queue.Builder.create(this, queueName)
 				.queueName(queueName)
 				.retentionPeriod(Duration.days(7))
 				.fifo(true)
+				.deadLetterQueue(DeadLetterQueue.builder()
+						.maxReceiveCount(3)
+						.queue(dlq)
+						.build())
 				.encryption(QueueEncryption.KMS_MANAGED)
 				.visibilityTimeout(Duration.minutes(6))
 				.build();
@@ -181,14 +194,34 @@ public class LcSmsStack extends Stack {
 				.assumedBy(new ServicePrincipal("lambda.amazonaws.com"))
 				.build();
 		// create event Source for sqs
-		final List<IEventSource> eventSources = new ArrayList<>();
-		eventSources.add(SqsEventSource.Builder.create(queue)
+		final List<IEventSource> queueEventSources = new ArrayList<>();
+		queueEventSources.add(SqsEventSource.Builder.create(queue)
 				.batchSize(1)
 				.enabled(true)
 				.build());
 		final Function smsProcessorLambda = createNonVpcLambda(args.getPrefixedName("processor-lambda"),
 				"com.lmig.libertyconnect.sms.processor.handler.LambdaHandler",
-				processorLambdaRole, args.getProcessorLambdaS3Key(), 5, envsMap, eventSources);
+				processorLambdaRole, args.getProcessorLambdaS3Key(), 5, envsMap, queueEventSources);
+		
+		// create dlq Lambda
+		final PolicyDocument dlqLambdaPolicyDocument = PolicyDocument.Builder.create()
+				.statements(Arrays.asList(getSqsStatement(dlq.getQueueArn()), getStateStatement(stateMachine.getStateMachineArn()), getLogStatement())).build();
+		final Role dlqLambdaRole = Role.Builder.create(this, args.getPrefixedName("dlq-lambda-role"))
+				.roleName(args.getPrefixedName("dlq-lambda-role"))
+				.inlinePolicies(Collections.singletonMap(args.getPrefixedName("dlq-lambda-policy"),
+						dlqLambdaPolicyDocument))
+				.path("/")
+				.assumedBy(new ServicePrincipal("lambda.amazonaws.com"))
+				.build();
+		// create event Source for dlq
+		final List<IEventSource> dlqEventSources = new ArrayList<>();
+		dlqEventSources.add(SqsEventSource.Builder.create(dlq)
+				.batchSize(1)
+				.enabled(true)
+				.build());
+		final Function dlqLambda = createNonVpcLambda(args.getPrefixedName("dlq-lambda"),
+				"com.lmig.libertyconnect.sms.dlq.handler.SMSDLQHandler",
+				dlqLambdaRole, args.getDlqLambdaS3Key(), 5, envsMap, dlqEventSources);
 		
 		// create scheduler for retry lambda
 		createLambdaScheduler(args.getPrefixedName("retry-lambda-cron-rule"), smsRetryLambda);
