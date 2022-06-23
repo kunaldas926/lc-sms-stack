@@ -29,6 +29,12 @@ properties([
         ),
         
         string(
+            defaultValue: "code/sms/sms-mapper-lambda-0.0.1-SNAPSHOT.jar",
+            description: 'bucket key for lambda jar',
+            name: 'MAPPER_LAMBDA_S3_KEY'
+        ),
+        
+        string(
             defaultValue: "code/sms/sms-retry-lambda-0.0.1-SNAPSHOT.jar",
             description: 'bucket key for lambda jar',
             name: 'RETRY_LAMBDA_S3_KEY'          
@@ -71,6 +77,7 @@ def deployCdk(currentEnv, accountId, region) {
 			-program ${params.PROGRAM} \
 			-connectorLambdaS3Key ${params.CONNECTOR_LAMBDA_S3_KEY} \
 			-processorLambdaS3Key ${params.PROCESSOR_LAMBDA_S3_KEY} \
+			-mapperLambdaS3Key ${params.MAPPER_LAMBDA_S3_KEY} \
 			-dbConnectorLambdaS3Key ${params.DB_CONNECTOR_LAMBDA_S3_KEY} \
 			-retryLambdaS3Key ${params.RETRY_LAMBDA_S3_KEY} \
 			-dlqLambdaS3Key ${params.DLQ_LAMBDA_S3_KEY} \

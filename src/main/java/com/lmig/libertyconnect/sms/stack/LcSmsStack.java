@@ -180,8 +180,23 @@ public class LcSmsStack extends Stack {
 		envsMap.remove("vpc_endpoint_url_ssm");
 		envsMap.remove("db_name");
 		
+		// create mapper Lambda
+		final PolicyDocument mapperPolicyDocument = PolicyDocument.Builder.create()
+				.statements(Arrays.asList(getLogStatement()))
+				.build();
+		final Role mapperLambdaRole = Role.Builder.create(this, args.getPrefixedName("mapper-lambda-role"))
+				.roleName(args.getPrefixedName("mapper-lambda-role"))
+				.inlinePolicies(Collections.singletonMap(args.getPrefixedName("mapper-lambda-policy"),
+						mapperPolicyDocument))
+				.path("/")
+				.assumedBy(new ServicePrincipal("lambda.amazonaws.com"))
+				.build();
+		final Function smsMapperLambda = createNonVpcLambda(args.getPrefixedName("mapper-lambda"),
+				"com.lmig.libertyconnect.sms.mapper.handler.LambdaHandler",
+				mapperLambdaRole, args.getMapperLambdaS3Key(), 5, envsMap, null);
+		
 		// Create step function to invoke dbConnector Lambda and send response to sns
-		final StateMachine stateMachine = createStateMachine(responseTopic, smsDbConnectorLambda);
+		final StateMachine stateMachine = createStateMachine(responseTopic, smsMapperLambda,smsDbConnectorLambda);
 		
 		// create processor Lambda
 		final PolicyDocument processorPolicyDocument = PolicyDocument.Builder.create()
@@ -302,6 +317,7 @@ public class LcSmsStack extends Stack {
 	}
 	
 	public StateMachine createStateMachine(final Topic topic,
+			final Function mapperLambda,
 			final Function dbConnectorLambda) {
 		final PolicyStatement sfnStatement = PolicyStatement.Builder.create()
 				.effect(Effect.ALLOW)
@@ -325,21 +341,26 @@ public class LcSmsStack extends Stack {
 		snsMsgFieldsMap.put("uuid", JsonPath.stringAt("$.uuid"));
 		snsMsgFieldsMap.put("app_name", JsonPath.stringAt("$.app_name"));
 		snsMsgFieldsMap.put("response", JsonPath.stringAt("$.response"));
-		
-		final LambdaInvoke lambdaInvokeTask = LambdaInvoke.Builder.create(this, args.getPrefixedName("dbconnector-lambda-task"))
+		final RetryProps retryProps = RetryProps.builder()
+				.errors(Arrays.asList("Lambda.ServiceException",
+						"Lambda.AWSLambdaException", "Lambda.SdkClientException"))
+				.backoffRate(2)
+				.maxAttempts(3)
+				.interval(Duration.seconds(2))
+				.build();
+		final LambdaInvoke mapperLambdaInvokeTask = LambdaInvoke.Builder.create(this, args.getPrefixedName("mapper-lambda-task"))
+				.lambdaFunction(mapperLambda)
+				.retryOnServiceExceptions(false)
+				.build();
+		mapperLambdaInvokeTask.addRetry(retryProps);
+		final LambdaInvoke dbConnectorLambdaInvokeTask = LambdaInvoke.Builder.create(this, args.getPrefixedName("dbconnector-lambda-task"))
 				.lambdaFunction(dbConnectorLambda)
 				.retryOnServiceExceptions(false)		
 				.build();
-		lambdaInvokeTask.addRetry(RetryProps.builder()
-					.errors(Arrays.asList("Lambda.ServiceException",
-							"Lambda.AWSLambdaException", "Lambda.SdkClientException"))
-					.backoffRate(2)
-					.maxAttempts(3)
-					.interval(Duration.seconds(2))
-					.build());
+		dbConnectorLambdaInvokeTask.addRetry(retryProps);
 		
 		final Parallel parallelStates = new Parallel(this, args.getPrefixedName("parallel"))
-				.branch(lambdaInvokeTask)
+				.branch(dbConnectorLambdaInvokeTask)
 				.branch(SnsPublish.Builder.create(this, args.getPrefixedName("publish-task"))
 						.topic(topic)
 						.message(TaskInput.fromObject(snsMsgFieldsMap))
@@ -347,7 +368,8 @@ public class LcSmsStack extends Stack {
 
 		return StateMachine.Builder.create(this, args.getPrefixedName("statemachine"))
 				.stateMachineName(args.getPrefixedName("statemachine"))
-				.definition(parallelStates)
+				.definition(mapperLambdaInvokeTask
+						.next(parallelStates))
 				.role(stateMachineRole)
 				.build();
 	}

@@ -27,6 +27,7 @@ public class LcSmsStackTest {
 				.dbConnectorLambdaS3Key("code/sms-db-connector-0.0.1-SNAPSHOT.jar")
 				.retryLambdaS3Key("code/sms/sms-retry-lambda-0.0.1-SNAPSHOT.jar")
 				.dlqLambdaS3Key("code/sms/sms-dlq-lambda-0.0.1-SNAPSHOT.jar")
+				.mapperLambdaS3Key("code/sms/sms-mapper-lambda-0.0.1-SNAPSHOT.jar")
 				.dtacPass("dummy")
 				.vietguyPass("dummy")
 				.accountId("01234567891011")

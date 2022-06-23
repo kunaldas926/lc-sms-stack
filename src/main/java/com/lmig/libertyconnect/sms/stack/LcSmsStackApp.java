@@ -92,6 +92,13 @@ public final class LcSmsStackApp {
         private String processorLambdaS3Key;
         
         @Parameter(
+                names = {"-mapperLambdaS3Key"},
+                description = "Required: bucket key for mapper Lambda",
+                required = true
+        )
+        private String mapperLambdaS3Key;
+        
+        @Parameter(
                 names = {"-dbConnectorLambdaS3Key"},
                 description = "Required: bucket key for processor Lambda",
                 required = true          
