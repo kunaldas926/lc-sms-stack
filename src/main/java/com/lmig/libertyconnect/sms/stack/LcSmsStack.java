@@ -350,6 +350,7 @@ public class LcSmsStack extends Stack {
 				.build();
 		final LambdaInvoke mapperLambdaInvokeTask = LambdaInvoke.Builder.create(this, args.getPrefixedName("mapper-lambda-task"))
 				.lambdaFunction(mapperLambda)
+				.outputPath("$.Payload")
 				.retryOnServiceExceptions(false)
 				.build();
 		mapperLambdaInvokeTask.addRetry(retryProps);
