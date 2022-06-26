@@ -10,9 +10,9 @@ public class Constants {
 	public static final String SMS_CONNECTOR_API_VERSION = "v1";
 	
 	// OpenL constants
-	public static final String DEV_OPENL_URL = "https://dev-east-openl-asiamcm.lmig.com/openl-api/REST/LibertyConnect/LibertyConnect/SMSConfig";
-	public static final String NONPROD_OPENL_URL = "https://dev-east-openl-asiamcm.lmig.com/openl-api/REST/LibertyConnect/LibertyConnect/SMSConfig";
-	public static final String PROD_OPENL_URL = "https://dev-east-openl-asiamcm.lmig.com/openl-api/REST/LibertyConnect/LibertyConnect/SMSConfig";
+	public static final String DEV_OPENL_URL = "https://dev-east-openl-asiamcm.lmig.com/openl-api/LibertyConnect/LibertyConnect/SMSConfig";
+	public static final String NONPROD_OPENL_URL = "https://dev-east-openl-asiamcm.lmig.com/openl-api/LibertyConnect/LibertyConnect/SMSConfig";
+	public static final String PROD_OPENL_URL = "https://dev-east-openl-asiamcm.lmig.com/openl-api/LibertyConnect/LibertyConnect/SMSConfig";
 
 	// DB related constants
 	// TODO : Move to prop file
