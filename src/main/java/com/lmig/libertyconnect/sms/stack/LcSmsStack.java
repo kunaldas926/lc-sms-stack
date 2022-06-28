@@ -122,7 +122,8 @@ public class LcSmsStack extends Stack {
 		final Metric metric = queue.metricNumberOfMessagesSent();
 		
 		final Alarm sqsAlarm = Alarm.Builder.create(this, args.getPrefixedName("queue-alarm"))
-		        .metric(metric)
+		        .alarmName(args.getPrefixedName("queue-alarm"))
+				.metric(metric)
 		        .threshold(1000)
 		        .evaluationPeriods(1)
 		        .build();
