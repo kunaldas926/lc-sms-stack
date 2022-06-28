@@ -24,6 +24,8 @@ import software.amazon.awscdk.services.apigateway.LambdaIntegration;
 import software.amazon.awscdk.services.apigateway.Resource;
 import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.apigateway.StageOptions;
+import software.amazon.awscdk.services.cloudwatch.Alarm;
+import software.amazon.awscdk.services.cloudwatch.Metric;
 import software.amazon.awscdk.services.ec2.GatewayVpcEndpoint;
 import software.amazon.awscdk.services.ec2.IGatewayVpcEndpoint;
 import software.amazon.awscdk.services.ec2.IVpc;
@@ -116,6 +118,14 @@ public class LcSmsStack extends Stack {
 				.visibilityTimeout(Duration.minutes(6))
 				.build();
 		queue.addToResourcePolicy(getQueueResourcePolicy());
+		
+		final Metric metric = queue.metricNumberOfMessagesSent();
+		
+		final Alarm sqsAlarm = Alarm.Builder.create(this, args.getPrefixedName("queue-alarm"))
+		        .metric(metric)
+		        .threshold(1000)
+		        .evaluationPeriods(1)
+		        .build();
 		
 		// Create Topic
 		final Topic responseTopic = createTopic(args.getPrefixedName("response-topic"), smsStackKey);
