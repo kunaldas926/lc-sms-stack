@@ -26,6 +26,7 @@ import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.apigateway.StageOptions;
 import software.amazon.awscdk.services.cloudwatch.Alarm;
 import software.amazon.awscdk.services.cloudwatch.Metric;
+import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.ec2.GatewayVpcEndpoint;
 import software.amazon.awscdk.services.ec2.IGatewayVpcEndpoint;
 import software.amazon.awscdk.services.ec2.IVpc;
@@ -53,6 +54,7 @@ import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.sns.Topic;
+import software.amazon.awscdk.services.sns.subscriptions.EmailSubscription;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.amazon.awscdk.services.sqs.QueueEncryption;
@@ -96,6 +98,15 @@ public class LcSmsStack extends Stack {
 
 		subnetSelection = getSubnetSelection();
 		
+		// Create Topic
+		final Topic responseTopic = createTopic(args.getPrefixedName("response-topic"), smsStackKey);
+		final Topic queueAlarmTopic = createTopic(args.getPrefixedName("queue-alarm-topic"), smsStackKey);
+		queueAlarmTopic.addSubscription(EmailSubscription.Builder.create("Shubham.Srivastava02@libertyinsurance.com.sg").build());
+		queueAlarmTopic.addSubscription(EmailSubscription.Builder.create("onkar.kandalgaonkar@libertymutual.com").build());
+		queueAlarmTopic.addSubscription(EmailSubscription.Builder.create("jose.francis@libertymutual.com.hk").build());
+		queueAlarmTopic.addSubscription(EmailSubscription.Builder.create("soundarapandian.nandhinidevi@libertymutual.com").build());
+		queueAlarmTopic.addSubscription(EmailSubscription.Builder.create("rimpa.deysarkar@libertymutual.com.hk").build());
+
 		//Create DLQ
 		final Queue dlq = Queue.Builder.create(this, args.getPrefixedName("dlq.fifo"))
 				.queueName(args.getPrefixedName("dlq.fifo"))
@@ -119,17 +130,14 @@ public class LcSmsStack extends Stack {
 				.build();
 		queue.addToResourcePolicy(getQueueResourcePolicy());
 		
-		final Metric metric = queue.metricNumberOfMessagesSent();
-		
+		final Metric metric = queue.metricApproximateNumberOfMessagesVisible();
 		final Alarm sqsAlarm = Alarm.Builder.create(this, args.getPrefixedName("queue-alarm"))
 		        .alarmName(args.getPrefixedName("queue-alarm"))
 				.metric(metric)
-		        .threshold(1000)
+		        .threshold(10000)
 		        .evaluationPeriods(1)
 		        .build();
-		
-		// Create Topic
-		final Topic responseTopic = createTopic(args.getPrefixedName("response-topic"), smsStackKey);
+		sqsAlarm.addAlarmAction(new SnsAction(queueAlarmTopic));
 		
 		final Map<String, String> envsMap = new HashMap<>();
 		envsMap.put("PROGRAM", args.program);

@@ -45,20 +45,20 @@
 			<artifactId>stepfunctions-tasks</artifactId>
 			<version>${cdk.version}</version>
 		</dependency>
-<!-- 		<dependency>
+		<dependency>
 			<groupId>software.amazon.awscdk</groupId>
-			<artifactId>lambda</artifactId>
+			<artifactId>cloudwatch-actions</artifactId>
 			<version>${cdk.version}</version>
-		</dependency> -->
+		</dependency>
 		<dependency>
 			<groupId>software.amazon.awscdk</groupId>
 			<artifactId>s3</artifactId>
 			<version>${cdk.version}</version>
 		</dependency>
 		<dependency>
-		    <groupId>software.amazon.awscdk</groupId>
-		    <artifactId>events-targets</artifactId>
-		    <version>${cdk.version}</version>
+			<groupId>software.amazon.awscdk</groupId>
+			<artifactId>events-targets</artifactId>
+			<version>${cdk.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>software.amazon.awscdk</groupId>
