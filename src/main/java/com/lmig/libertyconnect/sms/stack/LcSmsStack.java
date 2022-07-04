@@ -103,7 +103,7 @@ public class LcSmsStack extends Stack {
 		final Topic queueAlarmTopic = createTopic(args.getPrefixedName("queue-alarm-topic"), smsStackKey);
 		queueAlarmTopic.addSubscription(EmailSubscription.Builder.create("Shubham.Srivastava02@libertyinsurance.com.sg").build());
 		queueAlarmTopic.addSubscription(EmailSubscription.Builder.create("onkar.kandalgaonkar@libertymutual.com").build());
-		queueAlarmTopic.addSubscription(EmailSubscription.Builder.create("jose.francis@libertymutual.com.hk").build());
+		//queueAlarmTopic.addSubscription(EmailSubscription.Builder.create("jose.francis@libertymutual.com.hk").build());
 		queueAlarmTopic.addSubscription(EmailSubscription.Builder.create("soundarapandian.nandhinidevi@libertymutual.com").build());
 		queueAlarmTopic.addSubscription(EmailSubscription.Builder.create("rimpa.deysarkar@libertymutual.com.hk").build());
 
