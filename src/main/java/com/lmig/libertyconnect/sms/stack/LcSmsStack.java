@@ -130,14 +130,26 @@ public class LcSmsStack extends Stack {
 				.build();
 		queue.addToResourcePolicy(getQueueResourcePolicy());
 		
-		final Metric metric = queue.metricApproximateNumberOfMessagesVisible();
-		final Alarm sqsAlarm = Alarm.Builder.create(this, args.getPrefixedName("queue-alarm"))
-		        .alarmName(args.getPrefixedName("queue-alarm"))
-				.metric(metric)
+		// Add cloudwatch alarm to fifo
+		final Metric msgNotVisibleMetric = queue.metricApproximateNumberOfMessagesNotVisible();
+		final Alarm sqsMsgNotVisibleAlarm = Alarm.Builder.create(this, args.getPrefixedName("queue-msg-notvisible-alarm"))
+		        .alarmName(args.getPrefixedName("queue-msg-notvisible-alarm"))
+				.metric(msgNotVisibleMetric)
+		        .threshold(15000)
+		        .evaluationPeriods(1)
+		        .build();
+		sqsMsgNotVisibleAlarm.addAlarmAction(new SnsAction(queueAlarmTopic));
+		
+		final Metric msgSentMetric = queue.metricNumberOfMessagesSent();
+
+		final Alarm sqsMsgSentAlarm = Alarm.Builder.create(this, args.getPrefixedName("queue-msg-sent-alarm"))
+		        .alarmName(args.getPrefixedName("queue-msg-sent-alarm"))
+				.metric(msgSentMetric)
 		        .threshold(10000)
 		        .evaluationPeriods(1)
 		        .build();
-		sqsAlarm.addAlarmAction(new SnsAction(queueAlarmTopic));
+		sqsMsgSentAlarm.addAlarmAction(new SnsAction(queueAlarmTopic));
+
 		
 		final Map<String, String> envsMap = new HashMap<>();
 		envsMap.put("PROGRAM", args.program);
@@ -463,7 +475,7 @@ public class LcSmsStack extends Stack {
 	private PolicyDocument getPolicyDocument() {
 
 		final PolicyDocument policyDocument = new PolicyDocument();
-		policyDocument.addStatements(getSnsStatement(), getIamPolicyStatement());
+		policyDocument.addStatements(getCloudwatchStatement(), getSnsStatement(), getIamPolicyStatement());
 		return policyDocument;
 	}
 
@@ -472,6 +484,15 @@ public class LcSmsStack extends Stack {
 		final PolicyStatement policyStatement = new PolicyStatement();
 		policyStatement.addActions("kms:GenerateDataKey*", "kms:Decrypt");
 		policyStatement.addServicePrincipal("sns.amazonaws.com");
+		policyStatement.addAllResources();
+		return policyStatement;
+	}
+	
+	private PolicyStatement getCloudwatchStatement() {
+
+		final PolicyStatement policyStatement = new PolicyStatement();
+		policyStatement.addActions("kms:GenerateDataKey*", "kms:Decrypt");
+		policyStatement.addServicePrincipal("cloudwatch.amazonaws.com");
 		policyStatement.addAllResources();
 		return policyStatement;
 	}
