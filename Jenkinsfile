@@ -98,7 +98,6 @@ node('linux') {
     	sh "npm install -g n@8.2.0"
     	sh "n 16.15.1"
     	sh "mvn clean install"
-    	sh "mvn clean install"
     }
     
 	stage ("deploy") {
