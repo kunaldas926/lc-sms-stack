@@ -100,12 +100,12 @@ public class LcSmsStack extends Stack {
 		
 		// Create Topic
 		final Topic responseTopic = createTopic(args.getPrefixedName("response-topic"), smsStackKey);
-		final Topic queueAlarmTopic = createTopic(args.getPrefixedName("queue-alarm-topic"), smsStackKey);
-		queueAlarmTopic.addSubscription(EmailSubscription.Builder.create("Shubham.Srivastava02@libertyinsurance.com.sg").build());
-		queueAlarmTopic.addSubscription(EmailSubscription.Builder.create("onkar.kandalgaonkar@libertymutual.com").build());
+		final Topic alarmTopic = createTopic(args.getPrefixedName("alarm-topic"), smsStackKey);
+		alarmTopic.addSubscription(EmailSubscription.Builder.create("Shubham.Srivastava02@libertyinsurance.com.sg").build());
+		alarmTopic.addSubscription(EmailSubscription.Builder.create("onkar.kandalgaonkar@libertymutual.com").build());
 		//queueAlarmTopic.addSubscription(EmailSubscription.Builder.create("jose.francis@libertymutual.com.hk").build());
-		queueAlarmTopic.addSubscription(EmailSubscription.Builder.create("soundarapandian.nandhinidevi@libertymutual.com").build());
-		queueAlarmTopic.addSubscription(EmailSubscription.Builder.create("rimpa.deysarkar@libertymutual.com.hk").build());
+		alarmTopic.addSubscription(EmailSubscription.Builder.create("soundarapandian.nandhinidevi@libertymutual.com").build());
+		alarmTopic.addSubscription(EmailSubscription.Builder.create("rimpa.deysarkar@libertymutual.com.hk").build());
 
 		//Create DLQ
 		final Queue dlq = Queue.Builder.create(this, args.getPrefixedName("dlq.fifo"))
@@ -114,6 +114,17 @@ public class LcSmsStack extends Stack {
 				.encryption(QueueEncryption.KMS_MANAGED)
 				.visibilityTimeout(Duration.minutes(6))
 				.build();
+		
+		// Add cloudwatch Alarm for DLQ
+		final Metric dlqAlarmMetric = dlq.metricApproximateNumberOfMessagesNotVisible();
+
+		final Alarm dlqAlarm = Alarm.Builder.create(this, args.getPrefixedName("dlq-msg-notvisible-alarm"))
+		        .alarmName(args.getPrefixedName("dlq-msg-notvisible-alarm"))
+				.metric(dlqAlarmMetric)
+		        .threshold(1000)
+		        .evaluationPeriods(1)
+		        .build();
+		dlqAlarm.addAlarmAction(new SnsAction(alarmTopic));
 		
 		// create queue
 		final String queueName = args.getPrefixedName("queue.fifo");
@@ -135,21 +146,10 @@ public class LcSmsStack extends Stack {
 		final Alarm sqsMsgNotVisibleAlarm = Alarm.Builder.create(this, args.getPrefixedName("queue-msg-notvisible-alarm"))
 		        .alarmName(args.getPrefixedName("queue-msg-notvisible-alarm"))
 				.metric(msgNotVisibleMetric)
-		        .threshold(15000)
+		        .threshold(5000)
 		        .evaluationPeriods(1)
 		        .build();
-		sqsMsgNotVisibleAlarm.addAlarmAction(new SnsAction(queueAlarmTopic));
-		
-		final Metric msgSentMetric = queue.metricNumberOfMessagesSent();
-
-		final Alarm sqsMsgSentAlarm = Alarm.Builder.create(this, args.getPrefixedName("queue-msg-sent-alarm"))
-		        .alarmName(args.getPrefixedName("queue-msg-sent-alarm"))
-				.metric(msgSentMetric)
-		        .threshold(10000)
-		        .evaluationPeriods(1)
-		        .build();
-		sqsMsgSentAlarm.addAlarmAction(new SnsAction(queueAlarmTopic));
-
+		sqsMsgNotVisibleAlarm.addAlarmAction(new SnsAction(alarmTopic));
 		
 		final Map<String, String> envsMap = new HashMap<>();
 		envsMap.put("PROGRAM", args.program);
@@ -172,6 +172,7 @@ public class LcSmsStack extends Stack {
 		final Function smsConnectorLambda = createLambdaWithVpc(args.getPrefixedName("connector-lambda"),
 				"com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler",
 				connectorLambdaRole, args.getConnectorLambdaS3Key(), 5, envsMap, null);
+		createLambdaErrorMetricAlarm(args.getPrefixedName("connector-lambda-error-alarm"), smsConnectorLambda, alarmTopic);
 		envsMap.remove("openl_url");
 		
 		// create DB Connector Lambda
@@ -191,7 +192,7 @@ public class LcSmsStack extends Stack {
 				"com.lmig.libertyconnect.sms.dbconnector.handler.SMSDBConnectorHandler",
 				Role.fromRoleName(this, args.getPrefixedName("db-liberty-connect-role"), "apac-liberty-connect-role"), args.getDbConnectorLambdaS3Key(), 5,
 				envsMap, null);
-		
+		createLambdaErrorMetricAlarm(args.getPrefixedName("dbconnector-lambda-error-alarm"), smsDbConnectorLambda, alarmTopic);
 		// create retry Lambda
 		final PolicyDocument retryPolicyDocument = PolicyDocument.Builder.create()
 						.statements(Arrays.asList(getKmsStatement(), getSecretManagerStatement(), getLogStatement(), getNetworkStatement())).build();
@@ -205,6 +206,7 @@ public class LcSmsStack extends Stack {
 		final Function smsRetryLambda = createLambdaWithVpc(args.getPrefixedName("retry-lambda"),
 				"com.lmig.libertyconnect.sms.retry.handler.LambdaHandler",
 				Role.fromRoleName(this, args.getPrefixedName("retry-liberty-connect-role"), "apac-liberty-connect-role"), args.getRetryLambdaS3Key(), 15, envsMap, null);
+		createLambdaErrorMetricAlarm(args.getPrefixedName("retry-lambda-error-alarm"), smsRetryLambda, alarmTopic);
 		envsMap.remove("db_host");
 		envsMap.remove("port");
 		envsMap.remove("secret_id");
@@ -225,7 +227,7 @@ public class LcSmsStack extends Stack {
 		final Function smsMapperLambda = createNonVpcLambda(args.getPrefixedName("mapper-lambda"),
 				"com.lmig.libertyconnect.sms.mapper.handler.LambdaHandler",
 				mapperLambdaRole, args.getMapperLambdaS3Key(), 5, envsMap, null);
-		
+		createLambdaErrorMetricAlarm(args.getPrefixedName("mapper-lambda-error-alarm"), smsMapperLambda, alarmTopic);
 		// Create step function to invoke dbConnector Lambda and send response to sns
 		final StateMachine stateMachine = createStateMachine(responseTopic, smsMapperLambda,smsDbConnectorLambda);
 		
@@ -248,7 +250,7 @@ public class LcSmsStack extends Stack {
 		final Function smsProcessorLambda = createNonVpcLambda(args.getPrefixedName("processor-lambda"),
 				"com.lmig.libertyconnect.sms.processor.handler.LambdaHandler",
 				processorLambdaRole, args.getProcessorLambdaS3Key(), 5, envsMap, queueEventSources);
-		
+		createLambdaErrorMetricAlarm(args.getPrefixedName("processor-lambda-error-alarm"), smsProcessorLambda, alarmTopic);
 		// create dlq Lambda
 		final PolicyDocument dlqLambdaPolicyDocument = PolicyDocument.Builder.create()
 				.statements(Arrays.asList(getSqsStatement(dlq.getQueueArn()), getStateStatement(stateMachine.getStateMachineArn()), getLogStatement())).build();
@@ -268,15 +270,15 @@ public class LcSmsStack extends Stack {
 		final Function dlqLambda = createNonVpcLambda(args.getPrefixedName("dlq-lambda"),
 				"com.lmig.libertyconnect.sms.dlq.handler.SMSDLQHandler",
 				dlqLambdaRole, args.getDlqLambdaS3Key(), 5, envsMap, dlqEventSources);
-		
+		createLambdaErrorMetricAlarm(args.getPrefixedName("dlq-lambda-error-alarm"), dlqLambda, alarmTopic);
 		// create scheduler for retry lambda
 		createLambdaScheduler(args.getPrefixedName("retry-lambda-cron-rule"), smsRetryLambda);
 		
 		// Create SSM parameter for vietguys
-		createSSM("viet_guys-ssm","viet_guys-cred", args.getVietguyPass(), smsProcessorLambda);
+		createSSM(args.getPrefixedName("viet_guys-ssm"), args.getPrefixedName("viet_guys-cred"), args.getVietguyPass(), smsProcessorLambda);
 
 		// Create SSM parameter for dtac
-		createSSM("dtac-ssm", "dtac-cred", args.getDtacPass(), smsProcessorLambda);
+		createSSM(args.getPrefixedName("dtac-ssm"), args.getPrefixedName("dtac-cred"), args.getDtacPass(), smsProcessorLambda);
 		
 		// Create Rest API Gateway
 		createSMSApiGateway(smsConnectorLambda);
@@ -334,6 +336,19 @@ public class LcSmsStack extends Stack {
 		}
 		return builder.build();
 					
+	}
+	
+	public Alarm createLambdaErrorMetricAlarm(final String name, final Function lambda, final Topic topic) {
+		final Metric errorMetric = lambda.metricErrors();
+		final Alarm lambdaAlarm = Alarm.Builder.create(this, name)
+		        .alarmName(name)
+				.metric(errorMetric)
+		        .threshold(5)
+		        .evaluationPeriods(1)
+		        .build();
+		lambdaAlarm.addAlarmAction(new SnsAction(topic));
+		return lambdaAlarm;
+		
 	}
 	
 	public Rule createLambdaScheduler(final String name, final Function lambda) {
@@ -416,8 +431,8 @@ public class LcSmsStack extends Stack {
 	
 	public StringParameter createSSM(final String id, 
 			final String parameterName, final String originalValue, final Function lambda) {
-		StringParameter stringParameter = StringParameter.Builder.create(this, args.getPrefixedName(id))
-				.parameterName(args.getPrefixedName(parameterName))
+		StringParameter stringParameter = StringParameter.Builder.create(this, id)
+				.parameterName(parameterName)
 				.stringValue(new String(Base64.encodeBase64(originalValue.getBytes()))).build();
 		stringParameter.grantRead(lambda);
 		return stringParameter;
