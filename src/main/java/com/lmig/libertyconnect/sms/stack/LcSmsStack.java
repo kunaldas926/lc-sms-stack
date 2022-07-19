@@ -14,13 +14,14 @@ import com.lmig.libertyconnect.sms.stack.LcSmsStackApp.Args;
 import com.lmig.libertyconnect.sms.stack.utils.Constants;
 import com.lmig.libertyconnect.sms.stack.utils.UtilMethods;
 
-import org.jetbrains.annotations.NotNull;
 import software.amazon.awscdk.core.Construct;
 import software.amazon.awscdk.core.Duration;
 import software.amazon.awscdk.core.Stack;
 import software.amazon.awscdk.core.StackProps;
+import software.amazon.awscdk.services.apigateway.ApiKeyOptions;
 import software.amazon.awscdk.services.apigateway.EndpointConfiguration;
 import software.amazon.awscdk.services.apigateway.EndpointType;
+import software.amazon.awscdk.services.apigateway.IApiKey;
 import software.amazon.awscdk.services.apigateway.LambdaIntegration;
 import software.amazon.awscdk.services.apigateway.Resource;
 import software.amazon.awscdk.services.apigateway.RestApi;
@@ -197,11 +198,6 @@ public class LcSmsStack extends Stack {
 				Role.fromRoleName(this, args.getPrefixedName("db-liberty-connect-role"), "apac-liberty-connect-role"), args.getDbConnectorLambdaS3Key(), 5,
 				envsMap, null);
 		createLambdaErrorMetricAlarm(args.getPrefixedName("dbconnector-lambda-error-alarm"), smsDbConnectorLambda, alarmTopic);
-
-		/*MetricFilter dbMetricFilter = new MetricFilter();
-		dbMetricFilter.setFilterName("DBConnectivityError");
-		dbMetricFilter.setLogGroupName(smsDbConnectorLambda.getLogGroup().getLogGroupName());
-		dbMetricFilter.setFilterPattern("DBConnectivityError");*/
 
 		IFilterPattern dbConnErrorIFilterPattern = () -> "DBConnectivityError";
 
@@ -509,6 +505,10 @@ public class LcSmsStack extends Stack {
 						.build())
 				.cloudWatchRole(false)
 				.build();
+		
+		 final IApiKey key = api.addApiKey(args.getPrefixedName("api-key"), ApiKeyOptions.builder()
+		         .apiKeyName("api-key")
+		         .build());
 		
 		final Resource smsResource = api.getRoot().addResource(Constants.SERVICE_NAME);
 		final LambdaIntegration getWidgetIntegration = LambdaIntegration.Builder.create(lambda).build();

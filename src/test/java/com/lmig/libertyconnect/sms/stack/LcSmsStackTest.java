@@ -47,6 +47,7 @@ public class LcSmsStackTest {
 		assertTrue(actual.toString().contains("AWS::Lambda::Function"));
 		assertTrue(actual.toString().contains("AWS::Events::Rule"));
 		assertTrue(actual.toString().contains("AWS::ApiGateway::RestApi"));
+		assertTrue(actual.toString().contains("AWS::ApiGateway::ApiKey"));
 		assertTrue(actual.toString().contains("AWS::SSM::Parameter"));
 		assertTrue(actual.toString().contains("AWS::SNS::Topic"));
 		assertTrue(actual.toString().contains("AWS::StepFunctions::StateMachine"));
