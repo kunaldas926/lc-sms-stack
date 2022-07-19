@@ -385,7 +385,7 @@ public class LcSmsStack extends Stack {
 				    .ruleName(name)
 		            .description("Run retry lambda")
 		            .schedule(Schedule.cron(CronOptions.builder()
-		            		.minute("0/20")
+		            		.minute("0/360")
 		            		.build()))
 		            .targets(Arrays.asList(LambdaFunction.Builder.create(lambda).build()))
 		            .build();
