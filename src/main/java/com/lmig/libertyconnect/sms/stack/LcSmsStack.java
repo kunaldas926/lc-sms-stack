@@ -24,9 +24,14 @@ import software.amazon.awscdk.services.apigateway.EndpointType;
 import software.amazon.awscdk.services.apigateway.IApiKey;
 import software.amazon.awscdk.services.apigateway.LambdaIntegration;
 import software.amazon.awscdk.services.apigateway.MethodOptions;
+import software.amazon.awscdk.services.apigateway.Period;
+import software.amazon.awscdk.services.apigateway.QuotaSettings;
 import software.amazon.awscdk.services.apigateway.Resource;
 import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.apigateway.StageOptions;
+import software.amazon.awscdk.services.apigateway.ThrottleSettings;
+import software.amazon.awscdk.services.apigateway.UsagePlan;
+import software.amazon.awscdk.services.apigateway.UsagePlanProps;
 import software.amazon.awscdk.services.cloudwatch.Alarm;
 import software.amazon.awscdk.services.cloudwatch.Metric;
 import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
@@ -514,6 +519,18 @@ public class LcSmsStack extends Stack {
 		 final IApiKey key = api.addApiKey(args.getPrefixedName("api-key"), ApiKeyOptions.builder()
 		         .apiKeyName(args.getPrefixedName("api-key"))
 		         .build());
+		 final UsagePlan plan = api.addUsagePlan("usage-plan", UsagePlanProps.builder()
+		         .name("usage-plan")
+		         .throttle(ThrottleSettings.builder()
+		                 .rateLimit(100)
+		                 .burstLimit(200)
+		                 .build())
+		         .quota(QuotaSettings.builder()
+		        		 .limit(5000)
+		        		 .period(Period.MONTH)
+		        		 .build())
+		         .build());
+		plan.addApiKey(key);
 		
 		final Resource smsResource = api.getRoot().addResource(Constants.SERVICE_NAME);
 		final LambdaIntegration getWidgetIntegration = LambdaIntegration.Builder.create(lambda).build();
