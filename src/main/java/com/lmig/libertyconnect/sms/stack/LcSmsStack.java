@@ -31,6 +31,7 @@ import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.apigateway.StageOptions;
 import software.amazon.awscdk.services.apigateway.ThrottleSettings;
 import software.amazon.awscdk.services.apigateway.UsagePlan;
+import software.amazon.awscdk.services.apigateway.UsagePlanPerApiStage;
 import software.amazon.awscdk.services.apigateway.UsagePlanProps;
 import software.amazon.awscdk.services.cloudwatch.Alarm;
 import software.amazon.awscdk.services.cloudwatch.Metric;
@@ -510,7 +511,8 @@ public class LcSmsStack extends Stack {
 		final RestApi api = RestApi.Builder.create(this, args.getPrefixedName("gateway"))
 				.restApiName(args.getPrefixedAPIName())
 				.endpointConfiguration(endpointConfiguration)	
-				.policy(apiPolicyDocument).deployOptions(StageOptions.builder()
+				.policy(apiPolicyDocument)
+				.deployOptions(StageOptions.builder()
 						.stageName(Constants.SMS_CONNECTOR_API_VERSION)
 						.build())
 				.cloudWatchRole(false)
@@ -531,6 +533,10 @@ public class LcSmsStack extends Stack {
 		        		 .build())
 		         .build());
 		plan.addApiKey(key);
+		plan.addApiStage(UsagePlanPerApiStage.builder()
+				.api(api)
+				.stage(api.getDeploymentStage())
+				.build());
 		
 		final Resource smsResource = api.getRoot().addResource(Constants.SERVICE_NAME);
 		final LambdaIntegration getWidgetIntegration = LambdaIntegration.Builder.create(lambda).build();
