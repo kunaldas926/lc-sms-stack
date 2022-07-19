@@ -14,6 +14,7 @@ import com.lmig.libertyconnect.sms.stack.LcSmsStackApp.Args;
 import com.lmig.libertyconnect.sms.stack.utils.Constants;
 import com.lmig.libertyconnect.sms.stack.utils.UtilMethods;
 
+import org.jetbrains.annotations.NotNull;
 import software.amazon.awscdk.core.Construct;
 import software.amazon.awscdk.core.Duration;
 import software.amazon.awscdk.core.Stack;
@@ -52,6 +53,9 @@ import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IEventSource;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
+import software.amazon.awscdk.services.logs.IFilterPattern;
+import software.amazon.awscdk.services.logs.MetricFilter;
+import software.amazon.awscdk.services.logs.MetricFilterOptions;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sns.subscriptions.EmailSubscription;
@@ -193,6 +197,31 @@ public class LcSmsStack extends Stack {
 				Role.fromRoleName(this, args.getPrefixedName("db-liberty-connect-role"), "apac-liberty-connect-role"), args.getDbConnectorLambdaS3Key(), 5,
 				envsMap, null);
 		createLambdaErrorMetricAlarm(args.getPrefixedName("dbconnector-lambda-error-alarm"), smsDbConnectorLambda, alarmTopic);
+
+		/*MetricFilter dbMetricFilter = new MetricFilter();
+		dbMetricFilter.setFilterName("DBConnectivityError");
+		dbMetricFilter.setLogGroupName(smsDbConnectorLambda.getLogGroup().getLogGroupName());
+		dbMetricFilter.setFilterPattern("DBConnectivityError");*/
+
+		IFilterPattern dbConnErrorIFilterPattern = () -> "DBConnectivityError";
+
+		MetricFilter filter = smsDbConnectorLambda.getLogGroup().addMetricFilter(args.getPrefixedName("metric-filter-id"),
+				MetricFilterOptions.builder()
+						.metricName(args.getPrefixedName("db-connectivity-error-metric"))
+						.metricNamespace(args.getPrefixedName("lc/lambda/error"))
+						.filterPattern(dbConnErrorIFilterPattern)
+						.metricValue("1")
+						.build());
+
+
+		final Alarm dbConnectivityErrorAlarm = Alarm.Builder.create(this, args.getPrefixedName("db-connectivity-error-alarm"))
+				.alarmName(args.getPrefixedName("db-connectivity-error-alarm"))
+				.metric(filter.metric())
+				.threshold(1)
+				.evaluationPeriods(1)
+				.build();
+		dbConnectivityErrorAlarm.addAlarmAction(new SnsAction(alarmTopic));
+
 		// create retry Lambda
 		final PolicyDocument retryPolicyDocument = PolicyDocument.Builder.create()
 						.statements(Arrays.asList(getKmsStatement(), getSecretManagerStatement(), getLogStatement(), getNetworkStatement())).build();
