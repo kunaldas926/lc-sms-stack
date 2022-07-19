@@ -23,6 +23,7 @@ import software.amazon.awscdk.services.apigateway.EndpointConfiguration;
 import software.amazon.awscdk.services.apigateway.EndpointType;
 import software.amazon.awscdk.services.apigateway.IApiKey;
 import software.amazon.awscdk.services.apigateway.LambdaIntegration;
+import software.amazon.awscdk.services.apigateway.MethodOptions;
 import software.amazon.awscdk.services.apigateway.Resource;
 import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.apigateway.StageOptions;
@@ -511,13 +512,15 @@ public class LcSmsStack extends Stack {
 				.build();
 		
 		 final IApiKey key = api.addApiKey(args.getPrefixedName("api-key"), ApiKeyOptions.builder()
-		         .apiKeyName("api-key")
+		         .apiKeyName(args.getPrefixedName("api-key"))
 		         .build());
 		
 		final Resource smsResource = api.getRoot().addResource(Constants.SERVICE_NAME);
 		final LambdaIntegration getWidgetIntegration = LambdaIntegration.Builder.create(lambda).build();
 
-		smsResource.addMethod("POST", getWidgetIntegration);
+		smsResource.addMethod("POST", getWidgetIntegration, MethodOptions.builder()
+					.apiKeyRequired(true)
+					.build());
 	}
 
 	private PolicyDocument getPolicyDocument() {
