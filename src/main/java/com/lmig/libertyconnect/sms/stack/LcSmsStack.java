@@ -198,25 +198,8 @@ public class LcSmsStack extends Stack {
 				Role.fromRoleName(this, args.getPrefixedName("db-liberty-connect-role"), "apac-liberty-connect-role"), args.getDbConnectorLambdaS3Key(), 5,
 				envsMap, null);
 		createLambdaErrorMetricAlarm(args.getPrefixedName("dbconnector-lambda-error-alarm"), smsDbConnectorLambda, alarmTopic);
+		createLambdaMetricFilterAlarm(alarmTopic, smsDbConnectorLambda, "DBConnectivityError", "db-connectivity");
 
-		IFilterPattern dbConnErrorIFilterPattern = () -> "DBConnectivityError";
-
-		MetricFilter filter = smsDbConnectorLambda.getLogGroup().addMetricFilter(args.getPrefixedName("metric-filter-id"),
-				MetricFilterOptions.builder()
-						.metricName(args.getPrefixedName("db-connectivity-error-metric"))
-						.metricNamespace(args.getPrefixedName("lc/lambda/error"))
-						.filterPattern(dbConnErrorIFilterPattern)
-						.metricValue("1")
-						.build());
-
-
-		final Alarm dbConnectivityErrorAlarm = Alarm.Builder.create(this, args.getPrefixedName("db-connectivity-error-alarm"))
-				.alarmName(args.getPrefixedName("db-connectivity-error-alarm"))
-				.metric(filter.metric())
-				.threshold(1)
-				.evaluationPeriods(1)
-				.build();
-		dbConnectivityErrorAlarm.addAlarmAction(new SnsAction(alarmTopic));
 
 		// create retry Lambda
 		final PolicyDocument retryPolicyDocument = PolicyDocument.Builder.create()
@@ -309,7 +292,28 @@ public class LcSmsStack extends Stack {
 		createSMSApiGateway(smsConnectorLambda);
 
 	}
-	
+
+	private void createLambdaMetricFilterAlarm(Topic alarmTopic, Function smsDbConnectorLambda, String filterPattern, String metricFilterName) {
+		IFilterPattern dbConnErrorIFilterPattern = () -> filterPattern;
+
+		MetricFilter filter = smsDbConnectorLambda.getLogGroup().addMetricFilter(args.getPrefixedName(metricFilterName),
+				MetricFilterOptions.builder()
+						.metricName(args.getPrefixedName( metricFilterName + "-error-metric"))
+						.metricNamespace(args.getPrefixedName("lc/lambda/error"))
+						.filterPattern(dbConnErrorIFilterPattern)
+						.metricValue("1")
+						.build());
+
+
+		final Alarm dbConnectivityErrorAlarm = Alarm.Builder.create(this, args.getPrefixedName("db-connectivity-error-alarm"))
+				.alarmName(args.getPrefixedName(metricFilterName + "-error-alarm"))
+				.metric(filter.metric())
+				.threshold(1)
+				.evaluationPeriods(1)
+				.build();
+		dbConnectivityErrorAlarm.addAlarmAction(new SnsAction(alarmTopic));
+	}
+
 	public Function createNonVpcLambda(final String name, final String handler, final Role role,
 			final String codeBucketKey, final int timeout, final Map<String, String> envsMap,
 			final List<IEventSource> eventSources) {
