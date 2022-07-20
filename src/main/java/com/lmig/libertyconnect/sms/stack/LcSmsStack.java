@@ -205,6 +205,7 @@ public class LcSmsStack extends Stack {
 				Role.fromRoleName(this, args.getPrefixedName("db-liberty-connect-role"), "apac-liberty-connect-role"), args.getDbConnectorLambdaS3Key(), 5,
 				envsMap, null);
 		createLambdaErrorMetricAlarm(args.getPrefixedName("dbconnector-lambda-error-alarm"), smsDbConnectorLambda, alarmTopic);
+		//TODO: 5 errors/data points in 5 min window, CHECK https://forge.lmig.com/wiki/pages/viewpage.action?pageId=587977050
 		createLambdaMetricFilterAlarm(alarmTopic, smsDbConnectorLambda, "DBConnectivityError", "db-connectivity");
 
 
