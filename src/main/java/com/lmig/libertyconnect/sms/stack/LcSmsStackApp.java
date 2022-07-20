@@ -4,7 +4,6 @@ import com.amazonaws.util.StringUtils;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.lmig.libertyconnect.sms.stack.utils.Constants;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,27 +14,33 @@ import software.amazon.awscdk.core.StackProps;
 import software.amazon.awscdk.core.Tags;
 
 public final class LcSmsStackApp {
-	
-	private static final Args ARGS = new Args();
-	
-	public static void main(final String[] args) {
-		JCommander.newBuilder().addObject(ARGS).build().parse(args);
-		App app = new App();
-		final String stackName = ARGS.getPrefixedName("stack");
-		addTags(app, stackName);
-		new LcSmsStack(app, stackName, StackProps.builder()
-                .env(Environment.builder()
-                        .account(ARGS.getAccountId())
-                        .region(ARGS.getRegion())
-                        .build()).build(), ARGS);
 
-		app.synth();
-	}
+    private static final Args ARGS = new Args();
 
-	public static void addTags(App app, final String stackName) {
-		Tags.of(app).add("lm_troux_uid", ARGS.getLmTrouxUid());
-	}
-		
+    public static void main(final String[] args) {
+        JCommander.newBuilder().addObject(ARGS).build().parse(args);
+        App app = new App();
+        final String stackName = ARGS.getPrefixedName("stack");
+        addTags(app, stackName);
+        new LcSmsStack(
+                app,
+                stackName,
+                StackProps.builder()
+                        .env(
+                                Environment.builder()
+                                        .account(ARGS.getAccountId())
+                                        .region(ARGS.getRegion())
+                                        .build())
+                        .build(),
+                ARGS);
+
+        app.synth();
+    }
+
+    public static void addTags(App app, final String stackName) {
+        Tags.of(app).add("lm_troux_uid", ARGS.getLmTrouxUid());
+    }
+
     @Data
     @Builder
     @NoArgsConstructor
@@ -48,21 +53,21 @@ public final class LcSmsStackApp {
             required = true
         )
         public String program;
-        
+
         @Parameter(
             names = {"-profile", "-p"},
             description = "Required: Profile to run",
             required = true
         )
         private String profile;
-        
+
         @Parameter(
-        	names = {"-accountId"},
+            names = {"-accountId"},
             description = "Optional: AWS AccountId",
             required = false
         )
         public String accountId;
-            
+
         @Parameter(
             names = {"-region"},
             description = "Optional: AWS region",
@@ -73,77 +78,103 @@ public final class LcSmsStackApp {
         @Parameter(
             names = {"-lm_troux_uid"},
             description = "Required: tag lm_troux_uid",
-            required = true          
+            required = true
         )
-        private String lmTrouxUid;  
-        
+        private String lmTrouxUid;
+
         @Parameter(
-                names = {"-connectorLambdaS3Key"},
-                description = "Required: bucket key for connector Lambda",
-                required = true          
+            names = {"-connectorLambdaS3Key"},
+            description = "Required: bucket key for connector Lambda",
+            required = true
         )
         private String connectorLambdaS3Key;
-        
+
         @Parameter(
-                names = {"-processorLambdaS3Key"},
-                description = "Required: bucket key for processor Lambda",
-                required = true
+            names = {"-processorLambdaS3Key"},
+            description = "Required: bucket key for processor Lambda",
+            required = true
         )
         private String processorLambdaS3Key;
-        
+
         @Parameter(
-                names = {"-mapperLambdaS3Key"},
-                description = "Required: bucket key for mapper Lambda",
-                required = true
+            names = {"-mapperLambdaS3Key"},
+            description = "Required: bucket key for mapper Lambda",
+            required = true
         )
         private String mapperLambdaS3Key;
-        
+
         @Parameter(
-                names = {"-dbConnectorLambdaS3Key"},
-                description = "Required: bucket key for processor Lambda",
-                required = true          
+            names = {"-dbConnectorLambdaS3Key"},
+            description = "Required: bucket key for processor Lambda",
+            required = true
         )
         private String dbConnectorLambdaS3Key;
-        
+
         @Parameter(
-                names = {"-retryLambdaS3Key"},
-                description = "Required: bucket key for retry Lambda",
-                required = true
+            names = {"-retryLambdaS3Key"},
+            description = "Required: bucket key for retry Lambda",
+            required = true
         )
         private String retryLambdaS3Key;
-        
+
         @Parameter(
-                names = {"-dlqLambdaS3Key"},
-                description = "Required: bucket key for dlq Lambda",
-                required = true
+            names = {"-dlqLambdaS3Key"},
+            description = "Required: bucket key for dlq Lambda",
+            required = true
         )
         private String dlqLambdaS3Key;
-        
+
         @Parameter(
-                names = {"-vietguyPass"},
-                description = "Required: vietguys credential",
-                required = true          
+            names = {"-vietguyPass"},
+            description = "Required: vietguys credential",
+            required = true
         )
-        private String vietguyPass; 
-        
+        private String vietguyPass;
+
         @Parameter(
-                names = {"-dtacPass"},
-                description = "Required: dtac credential",
-                required = true          
+            names = {"-dtacPass"},
+            description = "Required: dtac credential",
+            required = true
         )
         private String dtacPass;
-        
-    	public String getPrefixedName(final String name) {
-	    	if (StringUtils.isNullOrEmpty(name)) {
-	    		return String.format("%s%s%s%s%s%s%s", this.program, "-", this.profile, "-", Constants.PROJECT_NAME, "-", Constants.SERVICE_NAME);
-	    	} else {
-	    		return String.format("%s%s%s%s%s%s%s%s%s", this.program, "-", this.profile, "-", Constants.PROJECT_NAME, "-", Constants.SERVICE_NAME, "-", name);	 
-	    	}
-    	}
-    	
-    	public String getPrefixedAPIName() {
 
-	    	return String.format("%s%s%s%s%s%s%s", this.program, "-", this.profile, "-", "libertyconnect", "-", Constants.SERVICE_NAME);	 
-    	}
+        public String getPrefixedName(final String name) {
+            if (StringUtils.isNullOrEmpty(name)) {
+                return String.format(
+                        "%s%s%s%s%s%s%s",
+                        this.program,
+                        "-",
+                        this.profile,
+                        "-",
+                        Constants.PROJECT_NAME,
+                        "-",
+                        Constants.SERVICE_NAME);
+            } else {
+                return String.format(
+                        "%s%s%s%s%s%s%s%s%s",
+                        this.program,
+                        "-",
+                        this.profile,
+                        "-",
+                        Constants.PROJECT_NAME,
+                        "-",
+                        Constants.SERVICE_NAME,
+                        "-",
+                        name);
+            }
+        }
+
+        public String getPrefixedAPIName() {
+
+            return String.format(
+                    "%s%s%s%s%s%s%s",
+                    this.program,
+                    "-",
+                    this.profile,
+                    "-",
+                    "libertyconnect",
+                    "-",
+                    Constants.SERVICE_NAME);
+        }
     }
 }

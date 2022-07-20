@@ -21,6 +21,12 @@
 		<spotless.version>2.21.0</spotless.version>
 		<lombok.version>1.18.8</lombok.version>
 		<jcommander.version>1.78</jcommander.version>
+		
+		<!-- Code Formatting -->
+		<spotless.javaformat.version>1.3</spotless.javaformat.version>
+		<spotless.javaformat.style>AOSP</spotless.javaformat.style>
+		<spotless.srcIncludes>src/main/java/**/*.java</spotless.srcIncludes>
+		<spotless.testIncludes>src/test/java/**/*.java</spotless.testIncludes>
 	</properties>
 
 	<dependencies>

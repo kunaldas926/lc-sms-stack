@@ -125,13 +125,17 @@
     </dependency>
   </dependencies>
   <properties>
-    <lombok.version>1.18.8</lombok.version>
-    <maven.compiler.target>1.8</maven.compiler.target>
-    <cdk.version>1.152.0</cdk.version>
+    <spotless.srcIncludes>src/main/java/**/*.java</spotless.srcIncludes>
     <spotless.version>2.21.0</spotless.version>
     <maven.compiler.source>1.8</maven.compiler.source>
+    <lombok.version>1.18.8</lombok.version>
+    <cdk.version>1.152.0</cdk.version>
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <spotless.testIncludes>src/test/java/**/*.java</spotless.testIncludes>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jcommander.version>1.78</jcommander.version>
+    <spotless.javaformat.style>AOSP</spotless.javaformat.style>
     <junit.version>5.7.1</junit.version>
+    <spotless.javaformat.version>1.3</spotless.javaformat.version>
   </properties>
 </project>
