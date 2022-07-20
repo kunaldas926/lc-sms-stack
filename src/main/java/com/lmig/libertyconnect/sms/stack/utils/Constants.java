@@ -32,5 +32,5 @@ public class Constants {
     public static final String PROD_SECRET_ID = "";
 
     // Used by alarm metric
-    public static final String ERROR_PREFIX = "LCException:";
+    public static final String ERROR_PREFIX = "LCException";
 }
