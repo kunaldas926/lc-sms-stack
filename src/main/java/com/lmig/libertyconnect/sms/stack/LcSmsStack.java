@@ -185,6 +185,7 @@ public class LcSmsStack extends Stack {
 				"com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler",
 				connectorLambdaRole, args.getConnectorLambdaS3Key(), 5, envsMap, null);
 		createLambdaErrorMetricAlarm(args.getPrefixedName("connector-lambda-error-alarm"), smsConnectorLambda, alarmTopic);
+		createLambdaMetricFilterAlarm(args.getPrefixedName("connector-lambda-metric-filter"), args.getPrefixedName("connector-lambda-metric-filter-alarm"), smsConnectorLambda, alarmTopic);
 		envsMap.remove("openl_url");
 		
 		// create DB Connector Lambda
@@ -205,8 +206,7 @@ public class LcSmsStack extends Stack {
 				Role.fromRoleName(this, args.getPrefixedName("db-liberty-connect-role"), "apac-liberty-connect-role"), args.getDbConnectorLambdaS3Key(), 5,
 				envsMap, null);
 		createLambdaErrorMetricAlarm(args.getPrefixedName("dbconnector-lambda-error-alarm"), smsDbConnectorLambda, alarmTopic);
-		//TODO: 5 errors/data points in 5 min window, CHECK https://forge.lmig.com/wiki/pages/viewpage.action?pageId=587977050
-		createLambdaMetricFilterAlarm(alarmTopic, smsDbConnectorLambda, "DBConnectivityError", "db-connectivity");
+		createLambdaMetricFilterAlarm(args.getPrefixedName("dbconnector-lambda-metric-filter"), args.getPrefixedName("dbconnector-lambda-metric-filter-alarm"), smsDbConnectorLambda, alarmTopic);
 
 
 		// create retry Lambda
@@ -223,6 +223,8 @@ public class LcSmsStack extends Stack {
 				"com.lmig.libertyconnect.sms.retry.handler.LambdaHandler",
 				Role.fromRoleName(this, args.getPrefixedName("retry-liberty-connect-role"), "apac-liberty-connect-role"), args.getRetryLambdaS3Key(), 15, envsMap, null);
 		createLambdaErrorMetricAlarm(args.getPrefixedName("retry-lambda-error-alarm"), smsRetryLambda, alarmTopic);
+		createLambdaMetricFilterAlarm(args.getPrefixedName("retry-lambda-metric-filter"), args.getPrefixedName("retry-lambda-metric-filter-alarm"), smsRetryLambda, alarmTopic);
+
 		envsMap.remove("db_host");
 		envsMap.remove("port");
 		envsMap.remove("secret_id");
@@ -244,6 +246,8 @@ public class LcSmsStack extends Stack {
 				"com.lmig.libertyconnect.sms.mapper.handler.LambdaHandler",
 				mapperLambdaRole, args.getMapperLambdaS3Key(), 5, envsMap, null);
 		createLambdaErrorMetricAlarm(args.getPrefixedName("mapper-lambda-error-alarm"), smsMapperLambda, alarmTopic);
+		createLambdaMetricFilterAlarm(args.getPrefixedName("mapper-lambda-metric-filter"), args.getPrefixedName("mapper-lambda-metric-filter-alarm"), smsMapperLambda, alarmTopic);
+
 		// Create step function to invoke dbConnector Lambda and send response to sns
 		final StateMachine stateMachine = createStateMachine(responseTopic, smsMapperLambda,smsDbConnectorLambda);
 		
@@ -267,6 +271,8 @@ public class LcSmsStack extends Stack {
 				"com.lmig.libertyconnect.sms.processor.handler.LambdaHandler",
 				processorLambdaRole, args.getProcessorLambdaS3Key(), 5, envsMap, queueEventSources);
 		createLambdaErrorMetricAlarm(args.getPrefixedName("processor-lambda-error-alarm"), smsProcessorLambda, alarmTopic);
+		createLambdaMetricFilterAlarm(args.getPrefixedName("processor-lambda-metric-filter"), args.getPrefixedName("processor-lambda-metric-filter-alarm"), smsProcessorLambda, alarmTopic);
+
 		// create dlq Lambda
 		final PolicyDocument dlqLambdaPolicyDocument = PolicyDocument.Builder.create()
 				.statements(Arrays.asList(getSqsStatement(dlq.getQueueArn()), getStateStatement(stateMachine.getStateMachineArn()), getLogStatement())).build();
@@ -287,6 +293,9 @@ public class LcSmsStack extends Stack {
 				"com.lmig.libertyconnect.sms.dlq.handler.SMSDLQHandler",
 				dlqLambdaRole, args.getDlqLambdaS3Key(), 5, envsMap, dlqEventSources);
 		createLambdaErrorMetricAlarm(args.getPrefixedName("dlq-lambda-error-alarm"), dlqLambda, alarmTopic);
+		createLambdaMetricFilterAlarm(args.getPrefixedName("dlq-lambda-metric-filter"), args.getPrefixedName("dlq-lambda-metric-filter-alarm"), dlqLambda, alarmTopic);
+
+		
 		// create scheduler for retry lambda
 		createLambdaScheduler(args.getPrefixedName("retry-lambda-cron-rule"), smsRetryLambda);
 		
@@ -301,22 +310,22 @@ public class LcSmsStack extends Stack {
 
 	}
 
-	private void createLambdaMetricFilterAlarm(Topic alarmTopic, Function smsDbConnectorLambda, String filterPattern, String metricFilterName) {
-		IFilterPattern dbConnErrorIFilterPattern = () -> filterPattern;
+	private void createLambdaMetricFilterAlarm(final String metricFilterName, final String alarmName, final Function lambda, final Topic alarmTopic) {
+		final IFilterPattern dbConnErrorIFilterPattern = () -> Constants.ERROR_PREFIX;
 
-		MetricFilter filter = smsDbConnectorLambda.getLogGroup().addMetricFilter(args.getPrefixedName(metricFilterName),
+		MetricFilter filter = lambda.getLogGroup().addMetricFilter(metricFilterName,
 				MetricFilterOptions.builder()
-						.metricName(args.getPrefixedName( metricFilterName + "-error-metric"))
+						.metricName(metricFilterName)
 						.metricNamespace(args.getPrefixedName("lc/lambda/error"))
 						.filterPattern(dbConnErrorIFilterPattern)
 						.metricValue("1")
 						.build());
 
 
-		final Alarm dbConnectivityErrorAlarm = Alarm.Builder.create(this, args.getPrefixedName("db-connectivity-error-alarm"))
-				.alarmName(args.getPrefixedName(metricFilterName + "-error-alarm"))
+		final Alarm dbConnectivityErrorAlarm = Alarm.Builder.create(this, alarmName)
+				.alarmName(alarmName)
 				.metric(filter.metric())
-				.threshold(1)
+				.threshold(5)
 				.evaluationPeriods(1)
 				.build();
 		dbConnectivityErrorAlarm.addAlarmAction(new SnsAction(alarmTopic));

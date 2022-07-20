@@ -45,9 +45,47 @@
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
         <version>${spotless.version}</version>
+        <executions>
+          <execution>
+            <phase>${formatter.phase}</phase>
+            <goals>
+              <goal>${formatter.goal}</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <java>
+            <includes>
+              <include>${spotless.srcIncludes}</include>
+              <include>${spotless.testIncludes}</include>
+            </includes>
+            <googleJavaFormat>
+              <version>${spotless.javaformat.version}</version>
+              <style>${spotless.javaformat.style}</style>
+            </googleJavaFormat>
+          </java>
+        </configuration>
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>local</id>
+      <properties>
+        <formatter.goal>apply</formatter.goal>
+        <formatter.phase>compile</formatter.phase>
+        <skip.generate.openapi>false</skip.generate.openapi>
+      </properties>
+    </profile>
+    <profile>
+      <id>ci</id>
+      <properties>
+        <formatter.goal>check</formatter.goal>
+        <formatter.phase>compile</formatter.phase>
+        <skip.generate.openapi>true</skip.generate.openapi>
+      </properties>
+    </profile>
+  </profiles>
   <dependencies>
     <dependency>
       <groupId>org.junit.jupiter</groupId>

@@ -23,4 +23,7 @@ public class Constants {
 	// TODO: Add correct values after rds stack is deployed to prod
 	public static final String PROD_DB_HOST = "";
 	public static final String PROD_SECRET_ID = "";
+	
+	// Used by alarm metric
+    public static final String ERROR_PREFIX = "LCException:";
 }

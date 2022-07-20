@@ -138,7 +138,58 @@
 				<groupId>com.diffplug.spotless</groupId>
 				<artifactId>spotless-maven-plugin</artifactId>
 				<version>${spotless.version}</version>
+				<configuration>
+					<java>
+						<includes>
+							<include>${spotless.srcIncludes}</include>
+							<include>${spotless.testIncludes}</include>
+						</includes>
+						<googleJavaFormat>
+							<version>${spotless.javaformat.version}</version>
+							<style>${spotless.javaformat.style}</style>
+						</googleJavaFormat>
+					</java>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>${formatter.goal}</goal>
+						</goals>
+						<phase>${formatter.phase}</phase>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<!-- Profile for local development -->
+		<profile>
+			<id>local</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<formatter.goal>apply</formatter.goal>
+				<formatter.phase>compile</formatter.phase>
+				<skip.generate.openapi>false</skip.generate.openapi>
+			</properties>
+		</profile>
+		<!-- Profile for CI -->
+		<profile>
+			<id>ci</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+				<property>
+					<!-- BUILD_NUMBER is an environment variable set within Jenkins -->
+					<name>env.BUILD_NUMBER</name>
+				</property>
+			</activation>
+			<properties>
+				<formatter.goal>check</formatter.goal>
+				<formatter.phase>compile</formatter.phase>
+				<skip.generate.openapi>true</skip.generate.openapi>
+			</properties>
+		</profile>
+	</profiles>
 </project>
