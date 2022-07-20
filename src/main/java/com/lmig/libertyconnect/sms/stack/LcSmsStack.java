@@ -463,7 +463,7 @@ public class LcSmsStack extends Stack {
             final String alarmName,
             final Function lambda,
             final Topic alarmTopic) {
-        final IFilterPattern dbConnErrorIFilterPattern = () -> Constants.ERROR_PREFIX;
+        final IFilterPattern filterPattern = () -> Constants.ERROR_PREFIX;
 
         MetricFilter filter =
                 lambda.getLogGroup()
@@ -472,18 +472,18 @@ public class LcSmsStack extends Stack {
                                 MetricFilterOptions.builder()
                                         .metricName(metricFilterName)
                                         .metricNamespace(args.getPrefixedName("lc/lambda/error"))
-                                        .filterPattern(dbConnErrorIFilterPattern)
+                                        .filterPattern(filterPattern)
                                         .metricValue("1")
                                         .build());
 
-        final Alarm dbConnectivityErrorAlarm =
+        final Alarm metricFilterAlarm =
                 Alarm.Builder.create(this, alarmName)
                         .alarmName(alarmName)
                         .metric(filter.metric())
-                        .threshold(5)
+                        .threshold(1)
                         .evaluationPeriods(1)
                         .build();
-        dbConnectivityErrorAlarm.addAlarmAction(new SnsAction(alarmTopic));
+        metricFilterAlarm.addAlarmAction(new SnsAction(alarmTopic));
     }
 
     public Function createNonVpcLambda(
