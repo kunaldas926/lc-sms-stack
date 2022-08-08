@@ -611,9 +611,9 @@ public class LcSmsStack extends Stack {
 
         final Map<String, String> snsMsgFieldsMap = new HashMap<>();
         snsMsgFieldsMap.put(
-                "client_reference_number", JsonPath.stringAt("$.client_reference_number"));
+                "clientReferenceNumber", JsonPath.stringAt("$.clientReferenceNumber"));
         snsMsgFieldsMap.put("uuid", JsonPath.stringAt("$.uuid"));
-        snsMsgFieldsMap.put("app_name", JsonPath.stringAt("$.app_name"));
+        snsMsgFieldsMap.put("appName", JsonPath.stringAt("$.appName"));
         snsMsgFieldsMap.put("response", JsonPath.stringAt("$.response"));
         final RetryProps retryProps =
                 RetryProps.builder()
