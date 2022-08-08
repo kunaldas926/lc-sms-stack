@@ -139,7 +139,7 @@ public class LcSmsStack extends Stack {
                         .queueName(args.getPrefixedName("dlq.fifo"))
                         .fifo(true)
                         .encryption(QueueEncryption.KMS_MANAGED)
-                        .visibilityTimeout(Duration.minutes(6))
+                        .visibilityTimeout(Duration.seconds(150))
                         .build();
 
         // Add cloudwatch Alarm for DLQ
@@ -164,7 +164,7 @@ public class LcSmsStack extends Stack {
                         .deadLetterQueue(
                                 DeadLetterQueue.builder().maxReceiveCount(3).queue(dlq).build())
                         .encryption(QueueEncryption.KMS_MANAGED)
-                        .visibilityTimeout(Duration.minutes(6))
+                        .visibilityTimeout(Duration.minutes(11))
                         .build();
         queue.addToResourcePolicy(getQueueResourcePolicy());
 
@@ -211,7 +211,7 @@ public class LcSmsStack extends Stack {
                         "com.lmig.libertyconnect.sms.connector.handler.SMSConnectorHandler",
                         connectorLambdaRole,
                         args.getConnectorLambdaS3Key(),
-                        5,
+                        28,
                         envsMap,
                         null);
         createLambdaErrorMetricAlarm(
@@ -261,7 +261,7 @@ public class LcSmsStack extends Stack {
                                 args.getPrefixedName("db-liberty-connect-role"),
                                 "apac-liberty-connect-role"),
                         args.getDbConnectorLambdaS3Key(),
-                        5,
+                        180,
                         envsMap,
                         null);
         createLambdaErrorMetricAlarm(
@@ -303,7 +303,7 @@ public class LcSmsStack extends Stack {
                                 args.getPrefixedName("retry-liberty-connect-role"),
                                 "apac-liberty-connect-role"),
                         args.getRetryLambdaS3Key(),
-                        15,
+                        900,
                         envsMap,
                         null);
         createLambdaErrorMetricAlarm(
@@ -341,7 +341,7 @@ public class LcSmsStack extends Stack {
                         "com.lmig.libertyconnect.sms.mapper.handler.LambdaHandler",
                         mapperLambdaRole,
                         args.getMapperLambdaS3Key(),
-                        5,
+                        60,
                         envsMap,
                         null);
         createLambdaErrorMetricAlarm(
@@ -385,7 +385,7 @@ public class LcSmsStack extends Stack {
                         "com.lmig.libertyconnect.sms.processor.handler.LambdaHandler",
                         processorLambdaRole,
                         args.getProcessorLambdaS3Key(),
-                        5,
+                        600,
                         envsMap,
                         queueEventSources);
         createLambdaErrorMetricAlarm(
@@ -426,7 +426,7 @@ public class LcSmsStack extends Stack {
                         "com.lmig.libertyconnect.sms.dlq.handler.SMSDLQHandler",
                         dlqLambdaRole,
                         args.getDlqLambdaS3Key(),
-                        5,
+                        120,
                         envsMap,
                         dlqEventSources);
         createLambdaErrorMetricAlarm(
@@ -509,7 +509,7 @@ public class LcSmsStack extends Stack {
                         .role(role)
                         .runtime(Runtime.JAVA_11)
                         .memorySize(1024)
-                        .timeout(Duration.minutes(timeout));
+                        .timeout(Duration.seconds(timeout));
         if (eventSources != null && !eventSources.isEmpty()) {
             builder.events(eventSources);
         }
@@ -542,7 +542,7 @@ public class LcSmsStack extends Stack {
                         .role(role)
                         .runtime(Runtime.JAVA_11)
                         .memorySize(1024)
-                        .timeout(Duration.minutes(timeout));
+                        .timeout(Duration.seconds(timeout));
         if (eventSources != null && !eventSources.isEmpty()) {
             builder.events(eventSources);
         }
