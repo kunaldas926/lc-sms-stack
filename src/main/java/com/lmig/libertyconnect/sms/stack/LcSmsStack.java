@@ -610,8 +610,7 @@ public class LcSmsStack extends Stack {
                         .build();
 
         final Map<String, String> snsMsgFieldsMap = new HashMap<>();
-        snsMsgFieldsMap.put(
-                "clientReferenceNumber", JsonPath.stringAt("$.clientReferenceNumber"));
+        snsMsgFieldsMap.put("clientReferenceNumber", JsonPath.stringAt("$.clientReferenceNumber"));
         snsMsgFieldsMap.put("uuid", JsonPath.stringAt("$.uuid"));
         snsMsgFieldsMap.put("appName", JsonPath.stringAt("$.appName"));
         snsMsgFieldsMap.put("response", JsonPath.stringAt("$.response"));
