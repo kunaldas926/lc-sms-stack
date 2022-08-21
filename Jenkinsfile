@@ -60,6 +60,12 @@ properties([
         string(
             description: 'dtac credential',
             name: 'DTAC_PASS'          
+        ),
+        
+        booleanParam(
+            defaultValue: false,
+            description: 'select true if env is nonprod and you want to promote artifact',
+            name: 'PROMOTE'       
         )
     ])
 ])
@@ -111,4 +117,19 @@ node('linux') {
 			deployCdk(currentEnv, accountId, region)
 		}
 	}
+	
+    stage('upload and promote artifact') {
+		if(params.PROMOTE.toBoolean() == true && getEnvFromBuildPath(env.JOB_NAME) == 'nonprod') {
+			timeout(time: 600, unit: 'SECONDS') {
+		              input(id: 'userInput', message: 'push to artifact and promote ?', ok: 'Yes')
+		    } 
+	
+	        def artifacts = ['prod_Jenkinsfile']
+	        artifactoryUploadFiles files:artifacts
+	
+	        promoteToProd(approver:'Jose.Francis',
+	            email:'Jose.Francis@libertymutual.com.hk',
+	            version:env.BUILD_NUMBER){}
+	   }
+    }
 }
