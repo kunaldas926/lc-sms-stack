@@ -731,7 +731,7 @@ public class LcSmsStack extends Stack {
                                 .build());
         final UsagePlan plan =
                 api.addUsagePlan(
-                        args.getPrefixedName("usage-plan"),
+                        "usage-plan",
                         UsagePlanProps.builder()
                                 .name(args.getPrefixedName("usage-plan"))
                                 /* .throttle(
