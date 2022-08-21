@@ -1,0 +1,66 @@
+@Library(['utils@master']) _
+
+import com.lmig.intl.cloud.jenkins.util.EnvConfigUtil
+
+static def getEnvFromBuildPath(jobPath) {
+    def directories = jobPath.split('/')
+    return directories[-3]
+}
+
+def getJobParamsAsJson() {
+    def jsonObj = readJSON text: env.JobParams
+    return jsonObj
+}
+
+def deployCdk(currentEnv, accountId, region) {
+    echo "Stack deployment starting..."
+     def params = getJobParamsAsJson();
+     def TROUX_UID = params['TROUX_UID']
+     def PROGRAM = params['PROGRAM']
+     def CONNECTOR_LAMBDA_S3_KEY = params['CONNECTOR_LAMBDA_S3_KEY']
+     def PROCESSOR_LAMBDA_S3_KEY = params['PROCESSOR_LAMBDA_S3_KEY']
+     def MAPPER_LAMBDA_S3_KEY = params['MAPPER_LAMBDA_S3_KEY']
+     def DB_CONNECTOR_LAMBDA_S3_KEY = params['DB_CONNECTOR_LAMBDA_S3_KEY']
+     def RETRY_LAMBDA_S3_KEY = params['RETRY_LAMBDA_S3_KEY']
+     def DLQ_LAMBDA_S3_KEY = params['DLQ_LAMBDA_S3_KEY']
+     def VIETGUYS_PASS = params['VIETGUYS_PASS']
+     def DTAC_PASS = params['DTAC_PASS']
+    
+    sh "cdk deploy --require-approval=never --app='java -jar ./target/sms-stack-0.0.1-SNAPSHOT.jar \
+			-profile ${currentEnv} \
+			-lm_troux_uid ${TROUX_UID} \
+			-program ${PROGRAM} \
+			-connectorLambdaS3Key ${CONNECTOR_LAMBDA_S3_KEY} \
+			-processorLambdaS3Key ${PROCESSOR_LAMBDA_S3_KEY} \
+			-mapperLambdaS3Key ${MAPPER_LAMBDA_S3_KEY} \
+			-dbConnectorLambdaS3Key ${DB_CONNECTOR_LAMBDA_S3_KEY} \
+			-retryLambdaS3Key ${RETRY_LAMBDA_S3_KEY} \
+			-dlqLambdaS3Key ${DLQ_LAMBDA_S3_KEY} \
+			-vietguyPass ${VIETGUYS_PASS} \
+			-dtacPass ${DTAC_PASS} \
+			-accountId ${accountId} \
+			-region ${region}'"
+    echo "Stack deployment finished!"
+}
+
+node('linux') {
+
+    stage('Build ') {
+        sh "npm install -g aws-cdk@2.24.1"
+    	sh "npm install -g n@8.2.0"
+    	sh "n 16.15.1"
+    	sh "mvn clean install"
+    }
+    
+	stage ("deploy") {
+	def currentEnv = getEnvFromBuildPath(env.JOB_NAME)
+	def accountId = getAwsAccountId()
+	def region = getAWSRegion()
+		
+    withAWS(
+    credentials: getAWSCredentialID(environment: currentEnv),
+	    region: getAWSRegion()) {
+			deployCdk(currentEnv, accountId, region)
+		}
+	}
+}

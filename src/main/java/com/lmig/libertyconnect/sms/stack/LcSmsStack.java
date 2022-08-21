@@ -916,9 +916,18 @@ public class LcSmsStack extends Stack {
                                                     this, "subnet-2", "subnet-0e45442c0143a2494")))
                             .onePerAz(true)
                             .build();
+        } else if ("prod".equals(args.getProfile())) {
+            subnetSelection =
+                    SubnetSelection.builder()
+                            .subnets(
+                                    Arrays.asList(
+                                            Subnet.fromSubnetId(
+                                                    this, "subnet-1", "subnet-02d2ab4afb22575b7"),
+                                            Subnet.fromSubnetId(
+                                                    this, "subnet-2", "subnet-0e4a245c2053adbbb")))
+                            .onePerAz(true)
+                            .build();
         } else {
-
-            // TODO: Add subnet ID for prod
             subnetSelection = SubnetSelection.builder().onePerAz(true).build();
         }
         return subnetSelection;

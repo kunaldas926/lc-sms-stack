@@ -8,7 +8,15 @@ public class UtilMethods {
     private UtilMethods() {}
 
     public static String getCodeBucket(final String env) {
-        return Constants.S3_BUCKET_PREFIX + "-" + env;
+        if ("dev".equals(env)) {
+            return Constants.DEV_S3_BUCKET;
+        } else if ("nonprod".equals(env)) {
+            return Constants.NONPROD_S3_BUCKET;
+        } else if ("prod".equals(env)) {
+            return Constants.PROD_S3_BUCKET;
+        } else {
+            return "dummy-s3-bucket";
+        }
     }
 
     public static String getOpenUrl(final String env) {
