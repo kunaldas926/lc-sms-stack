@@ -734,10 +734,10 @@ public class LcSmsStack extends Stack {
                                 .build());
         final UsagePlan plan =
                 api.addUsagePlan(
-                        "usage-plan",
+                		args.getPrefixedName("usage-plan"),
                         UsagePlanProps.builder()
-                                .name("usage-plan")
-                                .throttle(
+                                .name(args.getPrefixedName("usage-plan"))
+                               /* .throttle(
                                         ThrottleSettings.builder()
                                                 .rateLimit(100)
                                                 .burstLimit(200)
@@ -746,7 +746,7 @@ public class LcSmsStack extends Stack {
                                         QuotaSettings.builder()
                                                 .limit(5000)
                                                 .period(Period.MONTH)
-                                                .build())
+                                                .build())*/
                                 .build());
         plan.addApiKey(key);
         plan.addApiStage(
