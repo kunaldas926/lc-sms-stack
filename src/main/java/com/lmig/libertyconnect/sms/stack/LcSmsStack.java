@@ -24,9 +24,6 @@ import software.amazon.awscdk.services.apigateway.MethodOptions;
 import software.amazon.awscdk.services.apigateway.Resource;
 import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.apigateway.StageOptions;
-import software.amazon.awscdk.services.apigateway.UsagePlan;
-import software.amazon.awscdk.services.apigateway.UsagePlanPerApiStage;
-import software.amazon.awscdk.services.apigateway.UsagePlanProps;
 import software.amazon.awscdk.services.cloudwatch.Alarm;
 import software.amazon.awscdk.services.cloudwatch.Metric;
 import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
@@ -123,14 +120,14 @@ public class LcSmsStack extends Stack {
                         .build());
         alarmTopic.addSubscription(
                 EmailSubscription.Builder.create("onkar.kandalgaonkar@libertymutual.com").build());
-        //queueAlarmTopic.addSubscription(EmailSubscription.Builder.create("jose.francis@libertymutual.com.hk").build());
+        // queueAlarmTopic.addSubscription(EmailSubscription.Builder.create("jose.francis@libertymutual.com.hk").build());
         alarmTopic.addSubscription(
                 EmailSubscription.Builder.create("soundarapandian.nandhinidevi@libertymutual.com")
                         .build());
         alarmTopic.addSubscription(
                 EmailSubscription.Builder.create("rimpa.deysarkar@libertymutual.com.hk").build());
 
-        //Create DLQ
+        // Create DLQ
         final Queue dlq =
                 Queue.Builder.create(this, args.getPrefixedName("dlq.fifo"))
                         .queueName(args.getPrefixedName("dlq.fifo"))
@@ -729,25 +726,15 @@ public class LcSmsStack extends Stack {
                         ApiKeyOptions.builder()
                                 .apiKeyName(args.getPrefixedName("api-key"))
                                 .build());
-        final UsagePlan plan =
-                api.addUsagePlan(
-                        "usage-plan",
-                        UsagePlanProps.builder()
-                                .name(args.getPrefixedName("usage-plan"))
-                                /* .throttle(
-                                        ThrottleSettings.builder()
-                                                .rateLimit(100)
-                                                .burstLimit(200)
-                                                .build())
-                                .quota(
-                                        QuotaSettings.builder()
-                                                .limit(5000)
-                                                .period(Period.MONTH)
-                                                .build())*/
-                                .build());
-        plan.addApiKey(key);
-        plan.addApiStage(
-                UsagePlanPerApiStage.builder().api(api).stage(api.getDeploymentStage()).build());
+        /*
+         * final UsagePlan plan = api.addUsagePlan( "usage-plan",
+         * UsagePlanProps.builder() .name(args.getPrefixedName("usage-plan")) .throttle(
+         * ThrottleSettings.builder() .rateLimit(100) .burstLimit(200) .build()) .quota(
+         * QuotaSettings.builder() .limit(5000) .period(Period.MONTH) .build())
+         * .build()); plan.addApiKey(key); plan.addApiStage(
+         * UsagePlanPerApiStage.builder().api(api).stage(api.getDeploymentStage()).build
+         * ());
+         */
 
         final Resource smsResource = api.getRoot().addResource(Constants.SERVICE_NAME);
         final LambdaIntegration getWidgetIntegration =
