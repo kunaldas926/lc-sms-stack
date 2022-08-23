@@ -31,7 +31,7 @@ public class Constants {
     // TODO: Add correct values after rds stack is deployed to prod
     public static final String PROD_DB_HOST =
             "intl-sg-apac-liberty-connect-rds-mysql-prod-dbproxy.proxy-cecbblp5j9k0.ap-southeast-1.rds.amazonaws.com";
-    public static final String PROD_SECRET_ID = "";
+    public static final String PROD_SECRET_ID = "placeholder";
 
     // Used by alarm metric
     public static final String ERROR_PREFIX = "LCException";
