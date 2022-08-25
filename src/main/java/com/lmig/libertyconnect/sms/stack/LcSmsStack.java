@@ -552,6 +552,14 @@ public class LcSmsStack extends Stack {
                                     args.getPrefixedName("dbconnector-sg"),
                                     "intl-sg-" + args.getProfile() + "-apac-liberty-connect-Lambda",
                                     vpc)));
+        } else if (args.getPrefixedName("retry-lambda").equals(name)) {
+            builder.securityGroups(
+                    Arrays.asList(
+                            SecurityGroup.fromLookupByName(
+                                    this,
+                                    args.getPrefixedName("retry-sg"),
+                                    "intl-sg-" + args.getProfile() + "-apac-liberty-connect-Lambda",
+                                    vpc)));
         } else {
             builder.securityGroups(Arrays.asList(sg));
         }
