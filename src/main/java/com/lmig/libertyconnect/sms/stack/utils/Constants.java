@@ -15,9 +15,9 @@ public class Constants {
     public static final String DEV_OPENL_URL =
             "https://dev-east-openl-asiamcm.lmig.com/openl-api/LibertyConnect/LibertyConnect/SMSConfig";
     public static final String NONPROD_OPENL_URL =
-            "https://dev-east-openl-asiamcm.lmig.com/openl-api/LibertyConnect/LibertyConnect/SMSConfig";
+            "https://np-east-openl-asiamcm.lmig.com/openl-api/LibertyConnect/LibertyConnect/SMSConfig";
     public static final String PROD_OPENL_URL =
-            "https://dev-east-openl-asiamcm.lmig.com/openl-api/LibertyConnect/LibertyConnect/SMSConfig";
+            "https://east-openl-asiamcm.lmig.com/openl-api/LibertyConnect/LibertyConnect/SMSConfig";
 
     // DB related constants
     public static final String DEV_DB_HOST =
