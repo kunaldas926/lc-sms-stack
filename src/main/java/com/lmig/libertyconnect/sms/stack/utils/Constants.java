@@ -28,10 +28,10 @@ public class Constants {
             "intl-sg-apac-liberty-connect-rds-mysql-nonprod-dbproxy.proxy-ch6anygktrim.ap-southeast-1.rds.amazonaws.com";
     public static final String NONPROD_SECRET_ID =
             "intl-reg-apac-liberty-connect-rds1-nonprod/mysql/intl-sg-apac-liberty-connect-rds-mysql-nonprod/libconrdsmstrusr/libertyconnectnonprodrds";
-    // TODO: Add correct values after rds stack is deployed to prod
     public static final String PROD_DB_HOST =
             "intl-sg-apac-liberty-connect-rds-mysql-prod-dbproxy.proxy-cecbblp5j9k0.ap-southeast-1.rds.amazonaws.com";
-    public static final String PROD_SECRET_ID = "placeholder";
+    public static final String PROD_SECRET_ID =
+            "reg-prod-lc-app-secretmanager-stack/mysql/intl-sg-apac-liberty-connect-rds-mysql-prod-dbproxy/libertyconnectdbuser/libertyconnect";
 
     // Used by alarm metric
     public static final String ERROR_PREFIX = "LCException";
