@@ -22,6 +22,7 @@ def deployCdk(currentEnv, accountId, region) {
      def MAPPER_LAMBDA_S3_KEY = params['MAPPER_LAMBDA_S3_KEY']
      def DB_CONNECTOR_LAMBDA_S3_KEY = params['DB_CONNECTOR_LAMBDA_S3_KEY']
      def RETRY_LAMBDA_S3_KEY = params['RETRY_LAMBDA_S3_KEY']
+     def STATUS_LAMBDA_S3_KEY = params['STATUS_LAMBDA_S3_KEY']
      def DLQ_LAMBDA_S3_KEY = params['DLQ_LAMBDA_S3_KEY']
      def VIETGUYS_PASS = params['VIETGUYS_PASS']
      def DTAC_PASS = params['DTAC_PASS']
@@ -35,6 +36,7 @@ def deployCdk(currentEnv, accountId, region) {
 			-mapperLambdaS3Key ${MAPPER_LAMBDA_S3_KEY} \
 			-dbConnectorLambdaS3Key ${DB_CONNECTOR_LAMBDA_S3_KEY} \
 			-retryLambdaS3Key ${RETRY_LAMBDA_S3_KEY} \
+			-smsStatusLambdaS3Key ${STATUS_LAMBDA_S3_KEY} \
 			-dlqLambdaS3Key ${DLQ_LAMBDA_S3_KEY} \
 			-vietguyPass ${VIETGUYS_PASS} \
 			-dtacPass ${DTAC_PASS} \

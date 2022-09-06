@@ -6,6 +6,7 @@ public class Constants {
 
     public static final String PROJECT_NAME = "lc";
     public static final String SERVICE_NAME = "sms";
+    public static final String SMS_STATUS_NAME = "sms-status";
     public static final String DEV_S3_BUCKET = "intl-reg-libconnect-attachemnts-s3-dev";
     public static final String NONPROD_S3_BUCKET = "intl-reg-libconnect-attachemnts-s3-nonprod";
     public static final String PROD_S3_BUCKET = "intl-reg-libconnect-s3-bucket-prod";

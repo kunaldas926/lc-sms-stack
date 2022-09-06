@@ -311,6 +311,47 @@ public class LcSmsStack extends Stack {
                 smsRetryLambda,
                 alarmTopic);
 
+        // create SMS Status Lambda
+        final PolicyDocument smsStatusPolicyDocument =
+                PolicyDocument.Builder.create()
+                        .statements(
+                                Arrays.asList(
+                                        getKmsStatement(),
+                                        getSecretManagerStatement(),
+                                        getLogStatement(),
+                                        getNetworkStatement()))
+                        .build();
+        final Role smsStatusLambdaRole =
+                Role.Builder.create(this, args.getPrefixedName("status-lambda-role"))
+                        .roleName(args.getPrefixedName("status-lambda-role"))
+                        .inlinePolicies(
+                                Collections.singletonMap(
+                                        args.getPrefixedName("status-lambda-policy"),
+                                        smsStatusPolicyDocument))
+                        .path("/")
+                        .assumedBy(new ServicePrincipal("lambda.amazonaws.com"))
+                        .build();
+        final Function smsStatusLambda =
+                createLambdaWithVpc(
+                        args.getPrefixedName("status-lambda"),
+                        "com.lmig.libertyconnect.sms.status.handler.LambdaHandler",
+                        Role.fromRoleName(
+                                this,
+                                args.getPrefixedName("status-liberty-connect-role"),
+                                "apac-liberty-connect-role"),
+                        args.getSmsStatusLambdaS3Key(),
+                        900,
+                        envsMap,
+                        null);
+
+        createLambdaErrorMetricAlarm(
+                args.getPrefixedName("status-lambda-error-alarm"), smsStatusLambda, alarmTopic);
+        createLambdaMetricFilterAlarm(
+                args.getPrefixedName("status-lambda-metric-filter"),
+                args.getPrefixedName("status-lambda-metric-filter-alarm"),
+                smsStatusLambda,
+                alarmTopic);
+
         envsMap.remove("db_host");
         envsMap.remove("port");
         envsMap.remove("secret_id");
@@ -453,6 +494,7 @@ public class LcSmsStack extends Stack {
 
         // Create Rest API Gateway
         createSMSApiGateway(smsConnectorLambda);
+        createSmsStatusApiGateway(smsStatusLambda);
     }
 
     private void createLambdaMetricFilterAlarm(
@@ -558,6 +600,14 @@ public class LcSmsStack extends Stack {
                             SecurityGroup.fromLookupByName(
                                     this,
                                     args.getPrefixedName("retry-sg"),
+                                    "intl-sg-" + args.getProfile() + "-apac-liberty-connect-Lambda",
+                                    vpc)));
+        } else if (args.getPrefixedName("status-lambda").equals(name)) {
+            builder.securityGroups(
+                    Arrays.asList(
+                            SecurityGroup.fromLookupByName(
+                                    this,
+                                    args.getPrefixedName("status-sg"),
                                     "intl-sg-" + args.getProfile() + "-apac-liberty-connect-Lambda",
                                     vpc)));
         } else {
@@ -752,6 +802,65 @@ public class LcSmsStack extends Stack {
 
         smsResource.addMethod(
                 "POST", getWidgetIntegration, MethodOptions.builder().apiKeyRequired(true).build());
+    }
+
+    // create an api gateway for Sms Status
+    public void createSmsStatusApiGateway(final Function lambda) {
+        final PolicyStatement apiStatement =
+                PolicyStatement.Builder.create()
+                        .effect(Effect.ALLOW)
+                        .actions(Arrays.asList("execute-api:Invoke"))
+                        .resources(Arrays.asList("*"))
+                        .build();
+        apiStatement.addAnyPrincipal();
+
+        String vpcEndpointId = null;
+        EndpointConfiguration endpointConfiguration;
+
+        if ("dev".equals(args.getProfile())) {
+            vpcEndpointId = "vpce-0e92b0a49754e7f59";
+        } else if ("nonprod".equals(args.getProfile())) {
+            vpcEndpointId = "vpce-0ad8d2b2c5e1e404f";
+        } else if ("prod".equals(args.getProfile())) {
+            vpcEndpointId = "vpce-06a18f15c9b645f6e";
+        }
+
+        if (!StringUtils.isNullOrEmpty(vpcEndpointId)) {
+            final List<IGatewayVpcEndpoint> endpointList =
+                    Arrays.asList(
+                            GatewayVpcEndpoint.fromGatewayVpcEndpointId(
+                                    this, "status-endpoint-1", vpcEndpointId));
+            endpointConfiguration =
+                    EndpointConfiguration.builder()
+                            .types(Arrays.asList(EndpointType.PRIVATE))
+                            .vpcEndpoints(endpointList)
+                            .build();
+        } else {
+            endpointConfiguration =
+                    EndpointConfiguration.builder()
+                            .types(Arrays.asList(EndpointType.PRIVATE))
+                            .build();
+        }
+        final PolicyDocument apiPolicyDocument =
+                PolicyDocument.Builder.create().statements(Arrays.asList(apiStatement)).build();
+
+        final RestApi api =
+                RestApi.Builder.create(this, args.getPrefixedName("status-gateway"))
+                        .restApiName(args.getSmsStatusPrefixedAPIName())
+                        .endpointConfiguration(endpointConfiguration)
+                        .policy(apiPolicyDocument)
+                        .deployOptions(
+                                StageOptions.builder()
+                                        .stageName(Constants.SMS_CONNECTOR_API_VERSION)
+                                        .build())
+                        .cloudWatchRole(false)
+                        .build();
+
+        final Resource smsStatusResource = api.getRoot().addResource(Constants.SMS_STATUS_NAME);
+        final LambdaIntegration getWidgetIntegration =
+                LambdaIntegration.Builder.create(lambda).build();
+
+        smsStatusResource.addMethod("POST", getWidgetIntegration);
     }
 
     private PolicyDocument getPolicyDocument() {

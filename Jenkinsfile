@@ -41,6 +41,12 @@ properties([
         ),
         
         string(
+            defaultValue: "code/sms/sms-status-lambda-0.0.1-SNAPSHOT.jar",
+            description: 'bucket key for lambda jar',
+            name: 'STATUS_LAMBDA_S3_KEY'
+        ),
+        
+        string(
             defaultValue: "code/sms/sms-dlq-lambda-0.0.1-SNAPSHOT.jar",
             description: 'bucket key for lambda jar',
             name: 'DLQ_LAMBDA_S3_KEY'
@@ -86,6 +92,7 @@ def deployCdk(currentEnv, accountId, region) {
 			-mapperLambdaS3Key ${params.MAPPER_LAMBDA_S3_KEY} \
 			-dbConnectorLambdaS3Key ${params.DB_CONNECTOR_LAMBDA_S3_KEY} \
 			-retryLambdaS3Key ${params.RETRY_LAMBDA_S3_KEY} \
+			-smsStatusLambdaS3Key ${params.STATUS_LAMBDA_S3_KEY} \
 			-dlqLambdaS3Key ${params.DLQ_LAMBDA_S3_KEY} \
 			-vietguyPass ${params.VIETGUYS_PASS} \
 			-dtacPass ${params.DTAC_PASS} \

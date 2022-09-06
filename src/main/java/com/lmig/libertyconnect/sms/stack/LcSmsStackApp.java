@@ -118,6 +118,13 @@ public final class LcSmsStackApp {
         private String retryLambdaS3Key;
 
         @Parameter(
+            names = {"-smsStatusLambdaS3Key"},
+            description = "Required: bucket key for email-status Lambda",
+            required = true
+        )
+        private String smsStatusLambdaS3Key;
+
+        @Parameter(
             names = {"-dlqLambdaS3Key"},
             description = "Required: bucket key for dlq Lambda",
             required = true
@@ -175,6 +182,20 @@ public final class LcSmsStackApp {
                     "libertyconnect",
                     "-",
                     Constants.SERVICE_NAME);
+        }
+
+        // prefix name for email status
+        public String getSmsStatusPrefixedAPIName() {
+
+            return String.format(
+                    "%s%s%s%s%s%s%s",
+                    this.program,
+                    "-",
+                    this.profile,
+                    "-",
+                    "libertyconnect",
+                    "-",
+                    Constants.SMS_STATUS_NAME);
         }
     }
 }
