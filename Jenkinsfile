@@ -78,7 +78,7 @@ properties([
 
 static def getEnvFromBuildPath(jobPath) {
     def directories = jobPath.split('/')
-    return directories[-3]
+    return directories[1]
 }
 
 def deployCdk(currentEnv, accountId, region) {
