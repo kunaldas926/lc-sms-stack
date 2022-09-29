@@ -17,43 +17,43 @@ properties([
         ),
         
         string(
-            defaultValue: "code/sms/sms-connector-lambda-0.0.1-SNAPSHOT.jar",
+            defaultValue: "code/sms/sms-connector-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
             name: 'CONNECTOR_LAMBDA_S3_KEY'          
         ),
         
         string(
-            defaultValue: "code/sms/sms-processor-lambda-0.0.1-SNAPSHOT.jar",
+            defaultValue: "code/sms/sms-processor-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
             name: 'PROCESSOR_LAMBDA_S3_KEY'          
         ),
         
         string(
-            defaultValue: "code/sms/sms-mapper-lambda-0.0.1-SNAPSHOT.jar",
+            defaultValue: "code/sms/sms-mapper-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
             name: 'MAPPER_LAMBDA_S3_KEY'
         ),
         
         string(
-            defaultValue: "code/sms/sms-retry-lambda-0.0.1-SNAPSHOT.jar",
+            defaultValue: "code/sms/sms-retry-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
             name: 'RETRY_LAMBDA_S3_KEY'          
         ),
         
         string(
-            defaultValue: "code/sms/sms-status-lambda-0.0.1-SNAPSHOT.jar",
+            defaultValue: "code/sms/sms-status-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
             name: 'STATUS_LAMBDA_S3_KEY'
         ),
         
         string(
-            defaultValue: "code/sms/sms-dlq-lambda-0.0.1-SNAPSHOT.jar",
+            defaultValue: "code/sms/sms-dlq-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
             name: 'DLQ_LAMBDA_S3_KEY'
         ),
         
         string(
-            defaultValue: "code/sms/sms-dbconnector-lambda-0.0.1-SNAPSHOT.jar",
+            defaultValue: "code/sms/sms-dbconnector-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
             name: 'DB_CONNECTOR_LAMBDA_S3_KEY'
         ),
