@@ -194,6 +194,11 @@ public class LcSmsStack extends Stack {
         final Role connectorLambdaRole =
                 Role.Builder.create(this, args.getPrefixedName("connector-lambda-role"))
                         .roleName(args.getPrefixedName("connector-lambda-role"))
+                        .permissionsBoundary(
+                                ManagedPolicy.fromManagedPolicyName(
+                                        this,
+                                        args.getPrefixedName("connector-lambda-pb"),
+                                        Constants.PERMISSION_BOUNDRY_POLICY))
                         .inlinePolicies(
                                 Collections.singletonMap(
                                         args.getPrefixedName("connector-lambda-policy"),
@@ -235,6 +240,11 @@ public class LcSmsStack extends Stack {
         final Role dbconnectorLambdaRole =
                 Role.Builder.create(this, args.getPrefixedName("dbconnector-lambda-role"))
                         .roleName(args.getPrefixedName("dbconnector-lambda-role"))
+                        .permissionsBoundary(
+                                ManagedPolicy.fromManagedPolicyName(
+                                        this,
+                                        args.getPrefixedName("dbonnector-lambda-pb"),
+                                        Constants.PERMISSION_BOUNDRY_POLICY))
                         .managedPolicies(
                                 Arrays.asList(
                                         ManagedPolicy.fromManagedPolicyArn(
@@ -284,6 +294,11 @@ public class LcSmsStack extends Stack {
         final Role retryLambdaRole =
                 Role.Builder.create(this, args.getPrefixedName("retry-lambda-role"))
                         .roleName(args.getPrefixedName("retry-lambda-role"))
+                        .permissionsBoundary(
+                                ManagedPolicy.fromManagedPolicyName(
+                                        this,
+                                        args.getPrefixedName("retry-lambda-pb"),
+                                        Constants.PERMISSION_BOUNDRY_POLICY))
                         .inlinePolicies(
                                 Collections.singletonMap(
                                         args.getPrefixedName("retry-lambda-policy"),
@@ -324,6 +339,11 @@ public class LcSmsStack extends Stack {
         final Role smsStatusLambdaRole =
                 Role.Builder.create(this, args.getPrefixedName("status-lambda-role"))
                         .roleName(args.getPrefixedName("status-lambda-role"))
+                        .permissionsBoundary(
+                                ManagedPolicy.fromManagedPolicyName(
+                                        this,
+                                        args.getPrefixedName("status-lambda-pb"),
+                                        Constants.PERMISSION_BOUNDRY_POLICY))
                         .inlinePolicies(
                                 Collections.singletonMap(
                                         args.getPrefixedName("status-lambda-policy"),
@@ -366,6 +386,11 @@ public class LcSmsStack extends Stack {
         final Role mapperLambdaRole =
                 Role.Builder.create(this, args.getPrefixedName("mapper-lambda-role"))
                         .roleName(args.getPrefixedName("mapper-lambda-role"))
+                        .permissionsBoundary(
+                                ManagedPolicy.fromManagedPolicyName(
+                                        this,
+                                        args.getPrefixedName("mapper-lambda-pb"),
+                                        Constants.PERMISSION_BOUNDRY_POLICY))
                         .inlinePolicies(
                                 Collections.singletonMap(
                                         args.getPrefixedName("mapper-lambda-policy"),
@@ -406,6 +431,11 @@ public class LcSmsStack extends Stack {
         final Role processorLambdaRole =
                 Role.Builder.create(this, args.getPrefixedName("processor-lambda-role"))
                         .roleName(args.getPrefixedName("processor-lambda-role"))
+                        .permissionsBoundary(
+                                ManagedPolicy.fromManagedPolicyName(
+                                        this,
+                                        args.getPrefixedName("processor-lambda-pb"),
+                                        Constants.PERMISSION_BOUNDRY_POLICY))
                         .inlinePolicies(
                                 Collections.singletonMap(
                                         args.getPrefixedName("processor-lambda-policy"),
@@ -448,6 +478,11 @@ public class LcSmsStack extends Stack {
         final Role dlqLambdaRole =
                 Role.Builder.create(this, args.getPrefixedName("dlq-lambda-role"))
                         .roleName(args.getPrefixedName("dlq-lambda-role"))
+                        .permissionsBoundary(
+                                ManagedPolicy.fromManagedPolicyName(
+                                        this,
+                                        args.getPrefixedName("dlq-lambda-pb"),
+                                        Constants.PERMISSION_BOUNDRY_POLICY))
                         .inlinePolicies(
                                 Collections.singletonMap(
                                         args.getPrefixedName("dlq-lambda-policy"),

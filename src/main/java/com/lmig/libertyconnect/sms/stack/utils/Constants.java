@@ -36,4 +36,6 @@ public class Constants {
 
     // Used by alarm metric
     public static final String ERROR_PREFIX = "LCException";
+
+    public static final String PERMISSION_BOUNDRY_POLICY = "pb-lm-troux-uid-access";
 }
