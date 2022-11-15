@@ -32,7 +32,7 @@ public class Constants {
     public static final String PROD_DB_HOST =
             "intl-sg-apac-liberty-connect-rds-mysql-prod-dbproxy.proxy-cecbblp5j9k0.ap-southeast-1.rds.amazonaws.com";
     public static final String PROD_SECRET_ID =
-            "reg-prod-lc-app-secretmanager-stack/mysql/intl-sg-apac-liberty-connect-rds-mysql-prod-dbproxy/libertyconnectdbuser/libertyconnect";
+            "reg-prod-lc-app-secretmanager-stack/mysql/intl-sg-apac-liberty-connect-rds-mysql-prod-dbproxy/libertyconappuser/libertyconnect";
 
     // Used by alarm metric
     public static final String ERROR_PREFIX = "LCException";
