@@ -891,11 +891,27 @@ public class LcSmsStack extends Stack {
                         .cloudWatchRole(false)
                         .build();
 
+        final IApiKey key =
+                api.addApiKey(
+                        args.getPrefixedName("status-api-key"),
+                        ApiKeyOptions.builder()
+                                .apiKeyName(args.getPrefixedName("status-api-key"))
+                                .build());
+
+        final UsagePlan plan =
+                api.addUsagePlan(
+                        args.getPrefixedName("status-usage-plan"),
+                        UsagePlanProps.builder()
+                                .name(args.getPrefixedName("status-usage-plan"))
+                                .build());
+        plan.addApiKey(key);
+
         final Resource smsStatusResource = api.getRoot().addResource(Constants.SMS_STATUS_NAME);
         final LambdaIntegration getWidgetIntegration =
                 LambdaIntegration.Builder.create(lambda).build();
 
-        smsStatusResource.addMethod("POST", getWidgetIntegration);
+        smsStatusResource.addMethod(
+                "POST", getWidgetIntegration, MethodOptions.builder().apiKeyRequired(true).build());
     }
 
     private PolicyDocument getPolicyDocument() {
