@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.lmig.libertyconnect.sms.stack.LcSmsStackApp.Args;
+import com.lmig.libertyconnect.sms.stack.utils.Constants;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import software.amazon.awscdk.core.App;
@@ -22,7 +23,7 @@ public class LcSmsStackTest {
         Args ARGS =
                 Args.builder()
                         .program("test")
-                        .profile("local")
+                        .profile(Constants.LOCAL_ENV)
                         .processorLambdaS3Key("code/sms-processor-0.0.1-SNAPSHOT.jar")
                         .connectorLambdaS3Key("code/sms-connector-0.0.1-SNAPSHOT.jar")
                         .dbConnectorLambdaS3Key("code/sms-db-connector-0.0.1-SNAPSHOT.jar")

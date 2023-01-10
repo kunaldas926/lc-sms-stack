@@ -12,6 +12,12 @@ public class Constants {
     public static final String PROD_S3_BUCKET = "intl-apac-reg-lc-deployments-s3-prod";
     public static final String SMS_CONNECTOR_API_VERSION = "v1";
 
+    // Env constants
+    public static final String DEV_ENV = "dev";
+    public static final String NONPROD_ENV = "nonprod";
+    public static final String PROD_ENV = "prod";
+    public static final String LOCAL_ENV = "local";
+
     // OpenL constants
     public static final String DEV_OPENL_URL =
             "https://dev-east-openl-asiamcm.lmig.com/openl-api/LibertyConnect/LibertyConnect/SMSConfig";
