@@ -34,7 +34,7 @@ public class Constants {
     public static final String NONPROD_DB_HOST =
             "intl-sg-apac-liberty-connect-rds-mysql-nonprod-dbproxy.proxy-ch6anygktrim.ap-southeast-1.rds.amazonaws.com";
     public static final String NONPROD_SECRET_ID =
-            "intl-reg-apac-liberty-connect-rds1-nonprod/mysql/intl-sg-apac-liberty-connect-rds-mysql-nonprod/libconrdsmstrusr/libertyconnectnonprodrds";
+            "reg-nonprod-lc-app-secretmanager-stack/mysql/intl-sg-apac-liberty-connect-rds-mysql-nonprod/libertyconappuser/libertyconnect";
     public static final String PROD_DB_HOST =
             "intl-sg-apac-liberty-connect-rds-mysql-prod-dbproxy.proxy-cecbblp5j9k0.ap-southeast-1.rds.amazonaws.com";
     public static final String PROD_SECRET_ID =
