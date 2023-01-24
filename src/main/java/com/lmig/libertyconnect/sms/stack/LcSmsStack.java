@@ -905,6 +905,8 @@ public class LcSmsStack extends Stack {
                                 .name(args.getPrefixedName("status-usage-plan"))
                                 .build());
         plan.addApiKey(key);
+        plan.addApiStage(
+                UsagePlanPerApiStage.builder().api(api).stage(api.getDeploymentStage()).build());
 
         final Resource smsStatusResource = api.getRoot().addResource(Constants.SMS_STATUS_NAME);
         final LambdaIntegration getWidgetIntegration =
