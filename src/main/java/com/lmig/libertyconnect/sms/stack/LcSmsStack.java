@@ -776,11 +776,11 @@ public class LcSmsStack extends Stack {
         String vpcEndpointId = null;
         EndpointConfiguration endpointConfiguration;
 
-        if ("dev".equals(args.getProfile())) {
+        if (Constants.DEV_ENV.equals(args.getProfile())) {
             vpcEndpointId = "vpce-0e92b0a49754e7f59";
-        } else if ("nonprod".equals(args.getProfile())) {
+        } else if (Constants.NONPROD_ENV.equals(args.getProfile())) {
             vpcEndpointId = "vpce-0ad8d2b2c5e1e404f";
-        } else if ("prod".equals(args.getProfile())) {
+        } else if (Constants.PROD_ENV.equals(args.getProfile())) {
             vpcEndpointId = "vpce-06a18f15c9b645f6e";
         }
 
@@ -852,11 +852,11 @@ public class LcSmsStack extends Stack {
         String vpcEndpointId = null;
         EndpointConfiguration endpointConfiguration;
 
-        if ("dev".equals(args.getProfile())) {
+        if (Constants.DEV_ENV.equals(args.getProfile())) {
             vpcEndpointId = "vpce-0e92b0a49754e7f59";
-        } else if ("nonprod".equals(args.getProfile())) {
+        } else if (Constants.NONPROD_ENV.equals(args.getProfile())) {
             vpcEndpointId = "vpce-0ad8d2b2c5e1e404f";
-        } else if ("prod".equals(args.getProfile())) {
+        } else if (Constants.PROD_ENV.equals(args.getProfile())) {
             vpcEndpointId = "vpce-06a18f15c9b645f6e";
         }
 
@@ -891,11 +891,27 @@ public class LcSmsStack extends Stack {
                         .cloudWatchRole(false)
                         .build();
 
+        final IApiKey key =
+                api.addApiKey(
+                        args.getPrefixedName("status-api-key"),
+                        ApiKeyOptions.builder()
+                                .apiKeyName(args.getPrefixedName("status-api-key"))
+                                .build());
+
+        final UsagePlan plan =
+                api.addUsagePlan(
+                        args.getPrefixedName("status-usage-plan"),
+                        UsagePlanProps.builder()
+                                .name(args.getPrefixedName("status-usage-plan"))
+                                .build());
+        plan.addApiKey(key);
+
         final Resource smsStatusResource = api.getRoot().addResource(Constants.SMS_STATUS_NAME);
         final LambdaIntegration getWidgetIntegration =
                 LambdaIntegration.Builder.create(lambda).build();
 
-        smsStatusResource.addMethod("POST", getWidgetIntegration);
+        smsStatusResource.addMethod(
+                "POST", getWidgetIntegration, MethodOptions.builder().apiKeyRequired(true).build());
     }
 
     private PolicyDocument getPolicyDocument() {
@@ -1032,7 +1048,7 @@ public class LcSmsStack extends Stack {
     }
 
     private SubnetSelection getSubnetSelection() {
-        if ("dev".equals(args.getProfile())) {
+        if (Constants.DEV_ENV.equals(args.getProfile())) {
             subnetSelection =
                     SubnetSelection.builder()
                             .subnets(
@@ -1043,7 +1059,7 @@ public class LcSmsStack extends Stack {
                                                     this, "subnet-2", "subnet-bd056df4")))
                             .onePerAz(true)
                             .build();
-        } else if ("nonprod".equals(args.getProfile())) {
+        } else if (Constants.NONPROD_ENV.equals(args.getProfile())) {
             subnetSelection =
                     SubnetSelection.builder()
                             .subnets(
@@ -1054,7 +1070,7 @@ public class LcSmsStack extends Stack {
                                                     this, "subnet-2", "subnet-0e45442c0143a2494")))
                             .onePerAz(true)
                             .build();
-        } else if ("prod".equals(args.getProfile())) {
+        } else if (Constants.PROD_ENV.equals(args.getProfile())) {
             subnetSelection =
                     SubnetSelection.builder()
                             .subnets(

@@ -12,6 +12,12 @@ public class Constants {
     public static final String PROD_S3_BUCKET = "intl-apac-reg-lc-deployments-s3-prod";
     public static final String SMS_CONNECTOR_API_VERSION = "v1";
 
+    // Env constants
+    public static final String DEV_ENV = "dev";
+    public static final String NONPROD_ENV = "nonprod";
+    public static final String PROD_ENV = "prod";
+    public static final String LOCAL_ENV = "local";
+
     // OpenL constants
     public static final String DEV_OPENL_URL =
             "https://dev-east-openl-asiamcm.lmig.com/openl-api/LibertyConnect/LibertyConnect/SMSConfig";
@@ -28,7 +34,7 @@ public class Constants {
     public static final String NONPROD_DB_HOST =
             "intl-sg-apac-liberty-connect-rds-mysql-nonprod-dbproxy.proxy-ch6anygktrim.ap-southeast-1.rds.amazonaws.com";
     public static final String NONPROD_SECRET_ID =
-            "intl-reg-apac-liberty-connect-rds1-nonprod/mysql/intl-sg-apac-liberty-connect-rds-mysql-nonprod/libconrdsmstrusr/libertyconnectnonprodrds";
+            "reg-nonprod-lc-app-secretmanager-stack/mysql/intl-sg-apac-liberty-connect-rds-mysql-nonprod/libertyconappuser/libertyconnect";
     public static final String PROD_DB_HOST =
             "intl-sg-apac-liberty-connect-rds-mysql-prod-dbproxy.proxy-cecbblp5j9k0.ap-southeast-1.rds.amazonaws.com";
     public static final String PROD_SECRET_ID =
