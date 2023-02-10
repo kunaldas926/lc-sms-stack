@@ -136,7 +136,7 @@ node('linux') {
     withAWS(
     credentials: getAWSCredentialID(environment: currentEnv),
 	    region: getAWSRegion()) {
-			deployCdk(currentEnv, accountId, region)
+// 			deployCdk(currentEnv, accountId, region)
             if (firstTimeDeploy == "Yes") {
                 createCodeDeployResources(currentEnv, accountId, region)
             }
