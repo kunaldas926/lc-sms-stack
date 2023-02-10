@@ -72,6 +72,12 @@ properties([
             defaultValue: false,
             description: 'select true if env is nonprod and you want to promote artifact',
             name: 'PROMOTE'       
+        ),
+
+        choice(
+            choices: 'Yes\nNo',
+            description: 'select yes if you want to deploy for first time',
+            name: 'firstTimeDeploy'
         )
     ])
 ])
@@ -101,6 +107,14 @@ def deployCdk(currentEnv, accountId, region) {
     echo "Stack deployment finished!"
 }
 
+def createCodeDeployResources(currentEnv, accountId, region) {
+    sh "aws iam create-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --assume-role-policy-document file://./assume-role-policy.json --tags Key=lm_troux_uid,Value=${params.TROUX_UID} Key=aws_iam_permission_boundary_exempt,Value=true"
+    sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/intl-global-deny"
+    sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/cloud-services/cloud-services-global-deny"
+    sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/intl-cs-global-deny-services"
+    sh "aws iam put-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-policy --policy-document file://./sms-bg-policy.json"
+}
+
 node('linux') {
     stage('Clone') {
         checkout scm
@@ -110,7 +124,8 @@ node('linux') {
         sh "npm install -g aws-cdk@2.24.1"
     	sh "npm install -g n@8.2.0"
     	sh "n 16.15.1"
-    	sh "mvn clean install"
+//     	sh "mvn spotless:apply"
+//     	sh "mvn clean install"
     }
     
 	stage ("deploy") {
@@ -122,6 +137,9 @@ node('linux') {
     credentials: getAWSCredentialID(environment: currentEnv),
 	    region: getAWSRegion()) {
 			deployCdk(currentEnv, accountId, region)
+            if (firstTimeDeploy == "Yes") {
+                createCodeDeployResources(currentEnv, accountId, region)
+            }
 		}
 	}
 	
