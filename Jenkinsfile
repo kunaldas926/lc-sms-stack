@@ -172,6 +172,10 @@ node('linux') {
     }
 
     stage('Build ') {
+        sh 'curl --create-dirs "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/temp-aws/awscliv2.zip"'
+        sh 'unzip -u /temp-aws/awscliv2.zip -d /temp-aws'
+        sh "/temp-aws/aws/install -b /usr/local/bin -i /usr/local/bin --update"
+        sh 'rm -rf /temp-aws'
         sh "npm install -g aws-cdk@2.24.1"
     	sh "npm install -g n@8.2.0"
     	sh "n 16.15.1"
