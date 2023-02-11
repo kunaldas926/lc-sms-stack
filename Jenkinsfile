@@ -116,7 +116,7 @@ def populateCloudformationOutputs(currentEnv) {
 
 }
 
-def createCodeDeployResources(currentEnv, accountId, region) {
+def createCodeDeployResources(currentEnv, accountId) {
     def codeDeployIAMRole = sh(returnStdout: true, script: "aws iam create-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --assume-role-policy-document file://./assume-role-policy.json --tags Key=lm_troux_uid,Value=${params.TROUX_UID} Key=aws_iam_permission_boundary_exempt,Value=true").trim()
     sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/intl-global-deny"
     sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/cloud-services/cloud-services-global-deny"
