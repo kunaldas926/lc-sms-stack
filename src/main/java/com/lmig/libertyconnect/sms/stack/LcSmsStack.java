@@ -11,10 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.codec.binary.Base64;
-import software.amazon.awscdk.core.Construct;
-import software.amazon.awscdk.core.Duration;
-import software.amazon.awscdk.core.Stack;
-import software.amazon.awscdk.core.StackProps;
+import software.amazon.awscdk.core.*;
 import software.amazon.awscdk.services.apigateway.ApiKeyOptions;
 import software.amazon.awscdk.services.apigateway.EndpointConfiguration;
 import software.amazon.awscdk.services.apigateway.EndpointType;
@@ -129,6 +126,10 @@ public class LcSmsStack extends Stack {
                         .build());
         alarmTopic.addSubscription(
                 EmailSubscription.Builder.create("rimpa.deysarkar@libertymutual.com.hk").build());
+        alarmTopic.addSubscription(
+                EmailSubscription.Builder.create("das.kunal@libertymutual.com").build());
+        alarmTopic.addSubscription(
+                EmailSubscription.Builder.create("ladda.nilesh@libertymutual.com").build());
 
         // Create DLQ
         final Queue dlq =
@@ -530,6 +531,41 @@ public class LcSmsStack extends Stack {
         // Create Rest API Gateway
         createSMSApiGateway(smsConnectorLambda);
         createSmsStatusApiGateway(smsStatusLambda);
+
+        // create lambda outputs
+        final CfnOutput connectorLambdaOutput = CfnOutput.Builder
+                .create(this, args.getPrefixedName("connector-lambda-output"))
+                .value(smsConnectorLambda.getFunctionArn())
+                .build();
+        final CfnOutput processorLambdaOutput = CfnOutput.Builder
+                .create(this, args.getPrefixedName("processor-lambda-output"))
+                .value(smsProcessorLambda.getFunctionArn())
+                .build();
+        final CfnOutput mapperLambdaOutput = CfnOutput.Builder
+                .create(this, args.getPrefixedName("mapper-lambda-output"))
+                .value(smsMapperLambda.getFunctionArn())
+                .build();
+        final CfnOutput dbconnectorLambdaOutput = CfnOutput.Builder
+                .create(this, args.getPrefixedName("dbconnector-lambda-output"))
+                .value(smsDbConnectorLambda.getFunctionArn())
+                .build();
+        final CfnOutput retryLambdaOutput = CfnOutput.Builder
+                .create(this, args.getPrefixedName("retry-lambda-output"))
+                .value(smsRetryLambda.getFunctionArn())
+                .build();
+        final CfnOutput dlqLambdaOutput = CfnOutput.Builder
+                .create(this, args.getPrefixedName("dlq-lambda-output"))
+                .value(dlqLambda.getFunctionArn())
+                .build();
+        final CfnOutput statusLambdaOutput = CfnOutput.Builder
+                .create(this, args.getPrefixedName("status-lambda-output"))
+                .value(smsStatusLambda.getFunctionArn())
+                .build();
+        final CfnOutput kmsKeyOutput = CfnOutput.Builder
+                .create(this, args.getPrefixedName("kms-key-output"))
+                .value(smsStackKey.getKeyId())
+                .build();
+
     }
 
     private void createLambdaMetricFilterAlarm(

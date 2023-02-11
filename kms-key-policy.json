@@ -1,0 +1,36 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "kms:Describe*",
+        "kms:Get*",
+        "kms:List*",
+        "kms:RevokeGrant"
+      ],
+      "Resource": "*",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "ReplacedByJenkins"
+      }
+    },
+    {
+      "Action": [
+        "kms:Describe*",
+        "kms:Get*",
+        "kms:List*",
+        "kms:RevokeGrant",
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:ReEncrypt*",
+        "kms:GenerateDataKey*",
+        "kms:CreateGrant"
+      ],
+      "Resource": "*",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "ReplacedByJenkins"
+      }
+    }
+  ]
+}

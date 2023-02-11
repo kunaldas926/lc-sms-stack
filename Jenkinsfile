@@ -82,6 +82,12 @@ properties([
     ])
 ])
 
+
+def currentEnv = getEnvFromBuildPath(env.JOB_NAME)
+def accountId = getAwsAccountId()
+def region = getAWSRegion()
+def codeDeployAppSpecBucket = "intl-${currentEnv}-apacreg-${region}-code-deploy"
+
 static def getEnvFromBuildPath(jobPath) {
     def directories = jobPath.split('/')
     return directories[1]
@@ -107,12 +113,57 @@ def deployCdk(currentEnv, accountId, region) {
     echo "Stack deployment finished!"
 }
 
+def populateCloudformationOutputs() {
+    def outputs = sh(returnStdout: true, script: "aws cloudformation describe-stacks --stack-name ${params.PROGRAM}-${currentEnv}-sms-stack --no-paginate").trim()
+    def outputsJson = readJSON text: outputs
+    def outputsMap = outputsJson.Stacks[0].Outputs.collectEntries { [it.OutputKey, it.OutputValue] }
+
+}
+
 def createCodeDeployResources(currentEnv, accountId, region) {
-    sh "aws iam create-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --assume-role-policy-document file://./assume-role-policy.json --tags Key=lm_troux_uid,Value=${params.TROUX_UID} Key=aws_iam_permission_boundary_exempt,Value=true"
+    def codeDeployIAMRole = sh(returnStdout: true, script: "aws iam create-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --assume-role-policy-document file://./assume-role-policy.json --tags Key=lm_troux_uid,Value=${params.TROUX_UID} Key=aws_iam_permission_boundary_exempt,Value=true").trim()
     sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/intl-global-deny"
     sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/cloud-services/cloud-services-global-deny"
     sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/intl-cs-global-deny-services"
     sh "aws iam put-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-policy --policy-document file://./sms-bg-policy.json"
+    def codeDeployIAMRoleArn = codeDeployIAMRole["Role"]["Arn"]
+    echo "codeDeployIAMRoleArn: ${codeDeployIAMRoleArn}"
+    def codeDeployIAMRoleID = codeDeployIAMRole["Role"]["RoleId"]
+    echo "codeDeployIAMRoleID: ${codeDeployIAMRoleID}"
+}
+
+def updateKMSKeyPolicy(kmsKeyID) {
+    def KMSKeyPloicy = readJson file: './kms-key-policy.json'
+    KMSKeyPloicy["Statement"][0]["Principal"]["AWS"] = "arn:aws:iam::${accountId}:root"
+    KMSKeyPloicy["Statement"][1]["Principal"]["AWS"] = codeDeployIAMRoleArn
+    writeJSON file: './kms-key-policy.json', json: KMSKeyPloicy
+    sh "aws kms put-key-policy --key-id ${kmsKeyID} --policy-name default --policy file://./kms-key-policy.json"
+}
+
+def updateCodeDeployAppSpecBucketPolicy() {
+    sh "aws s3api get-bucket-policy --bucket ${codeDeployAppSpecBucket} --query Policy --output text > policy.json"
+    sh "jq <policy.json 'del(.Statement[0].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
+    sh "jq <policy.json 'del(.Statement[1].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
+    sh "jq <policy.json 'del(.Statement[2].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
+    sh "jq <policy.json 'del(.Statement[3].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
+    sh "cat policy.json"
+    sh "jq <policy.json '.Statement[0].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[1].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[2].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[3].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"]'> temp2.json && mv temp2.json policy.json"
+    sh "cat policy.json"
+    sh "aws s3api put-bucket-policy --bucket ${codeDeployAppSpecBucket} --policy file://policy.json"
+}
+
+def createCodeDeployApplication() {
+    def codeDeployApplication = sh(returnStdout: true, script: "aws deploy create-application --application-name ${params.PROGRAM}-lc-sms-bg-app --compute-platform Lambda --tags Key=lm_troux_uid,Value=${params.TROUX_UID}").trim()
+}
+
+def createCodeDeployDeploymentConfig() {
+    def codeDeployDeploymentConfig = sh(returnStdout: true, script: "aws deploy create-deployment-config --deployment-config-name ${params.PROGRAM}-lc-sms-bg-deployment-config --traffic-routing-config type=TimeBasedCanary,timeBasedCanary={canaryPercentage=10,canaryInterval=10} --compute-platform Lambda").trim()
+}
+
+def deleteCodeDeployResources() {
+    sh "aws deploy delete-application --application-name ${params.PROGRAM}-lc-sms-bg-app"
+    sh "aws deploy delete-deployment-config --deployment-config-name ${params.PROGRAM}-lc-sms-bg-deployment-config"
+    sh "aws deploy delete-deployment-group --application-name ${params.PROGRAM}-lc-sms-bg-app --deployment-group-name ${params.PROGRAM}-lc-sms-bg-deployment-group"
 }
 
 node('linux') {
@@ -124,21 +175,21 @@ node('linux') {
         sh "npm install -g aws-cdk@2.24.1"
     	sh "npm install -g n@8.2.0"
     	sh "n 16.15.1"
-//     	sh "mvn spotless:apply"
-//     	sh "mvn clean install"
+    	sh "mvn spotless:apply"
+    	sh "mvn clean install"
     }
     
 	stage ("deploy") {
-	def currentEnv = getEnvFromBuildPath(env.JOB_NAME)
-	def accountId = getAwsAccountId()
-	def region = getAWSRegion()
+
 		
     withAWS(
     credentials: getAWSCredentialID(environment: currentEnv),
 	    region: getAWSRegion()) {
-// 			deployCdk(currentEnv, accountId, region)
+			deployCdk(currentEnv, accountId, region)
             if (firstTimeDeploy == "Yes") {
+                sh "aws cloudformation describe-stacks --stack-name ${params.PROGRAM}-${currentEnv}-lc-sms-stack --no-paginate"
                 createCodeDeployResources(currentEnv, accountId, region)
+//                 updateKMSKeyPolicy(kmsKeyID)
             }
 		}
 	}
