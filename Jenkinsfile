@@ -107,7 +107,7 @@ def deployCdk(currentEnv, accountId, region) {
     echo "Stack deployment finished!"
 }
 
-def populateCloudformationOutputs() {
+def populateCloudformationOutputs(currentEnv) {
     def outputs = sh(returnStdout: true, script: "aws cloudformation describe-stacks --stack-name ${params.PROGRAM}-${currentEnv}-sms-stack --no-paginate").trim()
     def outputsJson = readJSON text: outputs
     outputsMap = outputsJson.Stacks[0].Outputs.collectEntries { [it.OutputKey, it.OutputValue] }
@@ -192,7 +192,7 @@ node('linux') {
 	    region: getAWSRegion()) {
 // 			deployCdk(currentEnv, accountId, region)
 //          createCodeDeployResources(currentEnv, accountId, region)
-            populateCloudformationOutputs()
+            populateCloudformationOutputs(currentEnv)
 		}
 	}
 	
