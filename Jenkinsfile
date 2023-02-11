@@ -87,6 +87,7 @@ def currentEnv = getEnvFromBuildPath(env.JOB_NAME)
 def accountId = getAwsAccountId()
 def region = getAWSRegion()
 def codeDeployAppSpecBucket = "intl-${currentEnv}-apacreg-${region}-code-deploy"
+def outputsMap = [:]
 
 static def getEnvFromBuildPath(jobPath) {
     def directories = jobPath.split('/')
@@ -116,7 +117,9 @@ def deployCdk(currentEnv, accountId, region) {
 def populateCloudformationOutputs() {
     def outputs = sh(returnStdout: true, script: "aws cloudformation describe-stacks --stack-name ${params.PROGRAM}-${currentEnv}-sms-stack --no-paginate").trim()
     def outputsJson = readJSON text: outputs
-    def outputsMap = outputsJson.Stacks[0].Outputs.collectEntries { [it.OutputKey, it.OutputValue] }
+    outputsMap = outputsJson.Stacks[0].Outputs.collectEntries { [it.OutputKey, it.OutputValue] }
+    echo "Cloudformation outputs: ${outputsMap}"
+    return outputsMap
 
 }
 
@@ -135,7 +138,8 @@ def createCodeDeployResources(currentEnv, accountId, region) {
 def updateKMSKeyPolicy(kmsKeyID) {
     def KMSKeyPloicy = readJson file: './kms-key-policy.json'
     KMSKeyPloicy["Statement"][0]["Principal"]["AWS"] = "arn:aws:iam::${accountId}:root"
-    KMSKeyPloicy["Statement"][1]["Principal"]["AWS"] = codeDeployIAMRoleArn
+    KMSKeyPloicy["Statement"][1]["Principal"]["AWS"] = "arn:aws:iam::${accountId}:root"
+    KMSKeyPloicy["Statement"][2]["Principal"]["AWS"] = codeDeployIAMRoleArn
     writeJSON file: './kms-key-policy.json', json: KMSKeyPloicy
     sh "aws kms put-key-policy --key-id ${kmsKeyID} --policy-name default --policy file://./kms-key-policy.json"
 }
@@ -179,8 +183,8 @@ node('linux') {
         sh "npm install -g aws-cdk@2.24.1"
     	sh "npm install -g n@8.2.0"
     	sh "n 16.15.1"
-    	sh "mvn spotless:apply"
-    	sh "mvn clean install"
+//     	sh "mvn spotless:apply"
+//     	sh "mvn clean install"
     }
     
 	stage ("deploy") {
@@ -189,12 +193,9 @@ node('linux') {
     withAWS(
     credentials: getAWSCredentialID(environment: currentEnv),
 	    region: getAWSRegion()) {
-			deployCdk(currentEnv, accountId, region)
-            if (firstTimeDeploy == "Yes") {
-                sh "aws cloudformation describe-stacks --stack-name ${params.PROGRAM}-${currentEnv}-lc-sms-stack --no-paginate"
-                createCodeDeployResources(currentEnv, accountId, region)
-//                 updateKMSKeyPolicy(kmsKeyID)
-            }
+// 			deployCdk(currentEnv, accountId, region)
+//          createCodeDeployResources(currentEnv, accountId, region)
+            populateCloudformationOutputs()
 		}
 	}
 	

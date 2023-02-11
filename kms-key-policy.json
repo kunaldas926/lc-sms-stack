@@ -2,6 +2,14 @@
   "Version": "2012-10-17",
   "Statement": [
     {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "ReplacedByJenkins"
+      },
+      "Action": "kms:*",
+      "Resource": "*"
+    },
+    {
       "Action": [
         "kms:Describe*",
         "kms:Get*",
@@ -31,6 +39,28 @@
       "Principal": {
         "AWS": "ReplacedByJenkins"
       }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "cloudwatch.amazonaws.com"
+      },
+      "Action": [
+        "kms:GenerateDataKey*",
+        "kms:Decrypt"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "sns.amazonaws.com"
+      },
+      "Action": [
+        "kms:GenerateDataKey*",
+        "kms:Decrypt"
+      ],
+      "Resource": "*"
     }
   ]
 }
