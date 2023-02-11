@@ -82,14 +82,6 @@ properties([
     ])
 ])
 
-def populateEnvVars() {
-    def currentEnv = getEnvFromBuildPath(env.JOB_NAME)
-    def accountId = getAwsAccountId()
-    def region = getAWSRegion()
-    def codeDeployAppSpecBucket = "intl-${currentEnv}-apacreg-${region}-code-deploy"
-    def outputsMap = [:]
-}
-
 static def getEnvFromBuildPath(jobPath) {
     def directories = jobPath.split('/')
     return directories[1]
@@ -173,9 +165,11 @@ def deleteCodeDeployResources() {
 
 node('linux') {
 
-    stage('Populate env vars') {
-         populateEnvVars()
-    }
+def currentEnv = getEnvFromBuildPath(env.JOB_NAME)
+def accountId = getAwsAccountId()
+def region = getAWSRegion()
+def codeDeployAppSpecBucket = "intl-${currentEnv}-apacreg-${region}-code-deploy"
+def outputsMap = [:]
 
     stage('Clone') {
         checkout scm
