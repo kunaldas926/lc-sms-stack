@@ -108,7 +108,7 @@ def deployCdk(currentEnv, accountId, region) {
 }
 
 def populateCloudformationOutputs(currentEnv) {
-    def outputs = sh(returnStdout: true, script: "aws cloudformation describe-stacks --stack-name ${params.PROGRAM}-${currentEnv}-sms-stack --no-paginate").trim()
+    def outputs = sh(returnStdout: true, script: "aws cloudformation describe-stacks --stack-name ${params.PROGRAM}-${currentEnv}-lc-sms-stack --no-paginate").trim()
     def outputsJson = readJSON text: outputs
     outputsMap = outputsJson.Stacks[0].Outputs.collectEntries { [it.OutputKey, it.OutputValue] }
     echo "Cloudformation outputs: ${outputsMap}"
