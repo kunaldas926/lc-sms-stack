@@ -164,13 +164,6 @@ def deleteCodeDeployResources() {
 }
 
 node('linux') {
-
-    def currentEnv = getEnvFromBuildPath(env.JOB_NAME)
-    def accountId = getAwsAccountId()
-    def region = getAWSRegion()
-    def codeDeployAppSpecBucket = "intl-${currentEnv}-apacreg-${region}-code-deploy"
-    def outputsMap = [:]
-
     stage('Clone') {
         checkout scm
     }
@@ -188,7 +181,11 @@ node('linux') {
     }
     
 	stage ("deploy") {
-
+	def currentEnv = getEnvFromBuildPath(env.JOB_NAME)
+	def accountId = getAwsAccountId()
+	def region = getAWSRegion()
+    def codeDeployAppSpecBucket = "intl-${currentEnv}-apacreg-${region}-code-deploy"
+    def outputsMap = [:]
 		
     withAWS(
     credentials: getAWSCredentialID(environment: currentEnv),
