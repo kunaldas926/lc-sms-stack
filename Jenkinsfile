@@ -73,9 +73,8 @@ properties([
             description: 'select true if env is nonprod and you want to promote artifact',
             name: 'PROMOTE'       
         ),
-
         choice(
-            choices: 'Yes\nNo',
+            choices: 'No\nYes',
             description: 'select yes if you want to deploy for first time',
             name: 'firstTimeDeploy'
         )
@@ -171,7 +170,13 @@ node('linux') {
                     sh "aws kms put-key-policy --key-id ${kmsKeyID} --policy-name default --policy file://./kms-key-policy.json"
                 } else {
                     def codeDeployIAMRoleArn = sh(returnStdout: true, script: "aws iam get-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role").trim()["Role"]["Arn"]
+                    echo "codeDeployIAMRoleArn: ${codeDeployIAMRoleArn}"
                     def codeDeployIAMRoleID = sh(returnStdout: true, script: "aws iam get-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role").trim()["Role"]["RoleId"]
+                    echo "codeDeployIAMRoleID: ${codeDeployIAMRoleID}"
+                    def kmsKeyID = outputsMapJson.toString().split(',').findAll { it.contains("kms") }.collect { it.split(':')[1].replaceAll('"', '') }
+                    echo "kmsKeyID: ${kmsKeyID}"
+                    def snsTopicArn = outputsMapJson.toString().split(',').findAll { it.contains("sns") }.collect { it.split(':')[1].replaceAll('"', '') }
+                    echo "snsTopicArn: ${snsTopicArn}"
                 }
                 try {
                     def smsLambdaList = outputsMapJson.toString().split(',').findAll { it.contains("lambdaoutput") }.collect { it.split(':')[1].replaceAll('"', '') }
