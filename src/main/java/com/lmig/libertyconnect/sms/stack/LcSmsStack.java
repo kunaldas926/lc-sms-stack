@@ -567,6 +567,10 @@ public class LcSmsStack extends Stack {
                 .create(this, args.getPrefixedName("kms-key-output"))
                 .value(smsStackKey.getKeyId())
                 .build();
+        final CfnOutput snsTopicArnOutput = CfnOutput.Builder
+                .create(this, args.getPrefixedName("sns-topic-arn-output"))
+                .value(alarmTopic.getTopicArn())
+                .build();
 
     }
 
