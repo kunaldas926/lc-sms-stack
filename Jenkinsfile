@@ -111,8 +111,9 @@ def populateCloudformationOutputs(currentEnv) {
     def outputs = sh(returnStdout: true, script: "aws cloudformation describe-stacks --stack-name ${params.PROGRAM}-${currentEnv}-lc-sms-stack --no-paginate").trim()
     def outputsJson = readJSON text: outputs
     outputsMap = outputsJson.Stacks[0].Outputs.collectEntries { ["${it.OutputKey}", "${it.OutputValue}"] }
-    echo "Cloudformation outputs: ${outputsMap}"
-    return outputsMap
+    def outputsMapJson = new groovy.json.JsonBuilder(outputsMap)
+    echo "outputsMapJson: ${outputsMapJson}"
+    return outputsMapJson
 
 }
 
@@ -137,7 +138,7 @@ def updateKMSKeyPolicy(kmsKeyID) {
     sh "aws kms put-key-policy --key-id ${kmsKeyID} --policy-name default --policy file://./kms-key-policy.json"
 }
 
-def updateCodeDeployAppSpecBucketPolicy() {
+def updateCodeDeployAppSpecBucketPolicy(codeDeployAppSpecBucket, codeDeployIAMRoleID) {
     sh "aws s3api get-bucket-policy --bucket ${codeDeployAppSpecBucket} --query Policy --output text > policy.json"
     sh "jq <policy.json 'del(.Statement[0].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
     sh "jq <policy.json 'del(.Statement[1].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
@@ -190,8 +191,43 @@ node('linux') {
     withAWS(
     credentials: getAWSCredentialID(environment: currentEnv),
 	    region: getAWSRegion()) {
-// 			deployCdk(currentEnv, accountId, region)
-//          createCodeDeployResources(currentEnv, accountId, region)
+			deployCdk(currentEnv, accountId, region)
+            def outputs = sh(returnStdout: true, script: "aws cloudformation describe-stacks --stack-name ${params.PROGRAM}-${currentEnv}-lc-sms-stack --no-paginate").trim()
+            def outputsJson = readJSON text: outputs
+            def outputsMap = outputsJson.Stacks[0].Outputs.collectEntries { ["${it.OutputKey}", "${it.OutputValue}"] }
+            def outputsMapJson = new groovy.json.JsonBuilder(outputsMap)
+            echo "outputsMapJson: ${outputsMapJson}"
+            if (firstTimeDeploy == "Yes") {
+                def codeDeployIAMRole = sh(returnStdout: true, script: "aws iam create-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --assume-role-policy-document file://./assume-role-policy.json --tags Key=lm_troux_uid,Value=${params.TROUX_UID} Key=aws_iam_permission_boundary_exempt,Value=true").trim()
+                sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/intl-global-deny"
+                sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/cloud-services/cloud-services-global-deny"
+                sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/intl-cs-global-deny-services"
+                sh "aws iam put-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-policy --policy-document file://./sms-bg-policy.json"
+                def codeDeployIAMRoleArn = codeDeployIAMRole["Role"]["Arn"]
+                def codeDeployIAMRoleID = codeDeployIAMRole["Role"]["RoleId"]
+            } else {
+                def codeDeployIAMRoleArn = sh(returnStdout: true, script: "aws iam get-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role").trim()["Role"]["Arn"]
+                def codeDeployIAMRoleID = sh(returnStdout: true, script: "aws iam get-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role").trim()["Role"]["RoleId"]
+            }
+            if (firstTimeDeploy == "Yes") {
+                sh "aws s3api get-bucket-policy --bucket ${codeDeployAppSpecBucket} --query Policy --output text > policy.json"
+                sh "jq <policy.json 'del(.Statement[0].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
+                sh "jq <policy.json 'del(.Statement[1].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
+                sh "jq <policy.json 'del(.Statement[2].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
+                sh "jq <policy.json 'del(.Statement[3].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
+                sh "cat policy.json"
+                sh "jq <policy.json '.Statement[0].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[1].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[2].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[3].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"]'> temp2.json && mv temp2.json policy.json"
+                sh "cat policy.json"
+                sh "aws s3api put-bucket-policy --bucket ${codeDeployAppSpecBucket} --policy file://policy.json"
+            }
+            try {
+                def smsLambdaList = outputsMapJson.toString().split(',').findAll { it.contains("lambdaoutput") }.collect { it.split(':')[1].replaceAll('"', '') }
+                for (lambda in smsLambdaList) {
+                    def lastPublishedLambdaVersion = sh(returnStdout: true, script: "aws lambda list-versions-by-function --function-name ${lambda} --no-paginate --query \"max_by(Versions, &to_number(to_number(Version) || \'0\'))\"").trim()
+                }
+
+            }
+
             populateCloudformationOutputs(currentEnv)
 		}
 	}

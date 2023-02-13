@@ -4,12 +4,14 @@ import com.amazonaws.util.StringUtils;
 import com.lmig.libertyconnect.sms.stack.LcSmsStackApp.Args;
 import com.lmig.libertyconnect.sms.stack.utils.Constants;
 import com.lmig.libertyconnect.sms.stack.utils.UtilMethods;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.commons.codec.binary.Base64;
 import software.amazon.awscdk.core.*;
 import software.amazon.awscdk.services.apigateway.ApiKeyOptions;
@@ -535,31 +537,31 @@ public class LcSmsStack extends Stack {
         // create lambda outputs
         final CfnOutput connectorLambdaOutput = CfnOutput.Builder
                 .create(this, args.getPrefixedName("connector-lambda-output"))
-                .value(smsConnectorLambda.getFunctionArn())
+                .value(smsConnectorLambda.getFunctionName())
                 .build();
         final CfnOutput processorLambdaOutput = CfnOutput.Builder
                 .create(this, args.getPrefixedName("processor-lambda-output"))
-                .value(smsProcessorLambda.getFunctionArn())
+                .value(smsProcessorLambda.getFunctionName())
                 .build();
         final CfnOutput mapperLambdaOutput = CfnOutput.Builder
                 .create(this, args.getPrefixedName("mapper-lambda-output"))
-                .value(smsMapperLambda.getFunctionArn())
+                .value(smsMapperLambda.getFunctionName())
                 .build();
         final CfnOutput dbconnectorLambdaOutput = CfnOutput.Builder
                 .create(this, args.getPrefixedName("dbconnector-lambda-output"))
-                .value(smsDbConnectorLambda.getFunctionArn())
+                .value(smsDbConnectorLambda.getFunctionName())
                 .build();
         final CfnOutput retryLambdaOutput = CfnOutput.Builder
                 .create(this, args.getPrefixedName("retry-lambda-output"))
-                .value(smsRetryLambda.getFunctionArn())
+                .value(smsRetryLambda.getFunctionName())
                 .build();
         final CfnOutput dlqLambdaOutput = CfnOutput.Builder
                 .create(this, args.getPrefixedName("dlq-lambda-output"))
-                .value(dlqLambda.getFunctionArn())
+                .value(dlqLambda.getFunctionName())
                 .build();
         final CfnOutput statusLambdaOutput = CfnOutput.Builder
                 .create(this, args.getPrefixedName("status-lambda-output"))
-                .value(smsStatusLambda.getFunctionArn())
+                .value(smsStatusLambda.getFunctionName())
                 .build();
         final CfnOutput kmsKeyOutput = CfnOutput.Builder
                 .create(this, args.getPrefixedName("kms-key-output"))
