@@ -15,49 +15,49 @@ properties([
             description: 'lm_troux_uid',
             name: 'TROUX_UID'          
         ),
-        
+
         string(
             defaultValue: "code/sms/sms-connector-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
-            name: 'CONNECTOR_LAMBDA_S3_KEY'          
+            name: 'CONNECTOR_LAMBDA_S3_KEY'
         ),
-        
+
         string(
             defaultValue: "code/sms/sms-processor-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
-            name: 'PROCESSOR_LAMBDA_S3_KEY'          
+            name: 'PROCESSOR_LAMBDA_S3_KEY'
         ),
-        
+
         string(
             defaultValue: "code/sms/sms-mapper-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
             name: 'MAPPER_LAMBDA_S3_KEY'
         ),
-        
+
         string(
             defaultValue: "code/sms/sms-retry-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
-            name: 'RETRY_LAMBDA_S3_KEY'          
+            name: 'RETRY_LAMBDA_S3_KEY'
         ),
-        
+
         string(
             defaultValue: "code/sms/sms-status-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
             name: 'STATUS_LAMBDA_S3_KEY'
         ),
-        
+
         string(
             defaultValue: "code/sms/sms-dlq-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
             name: 'DLQ_LAMBDA_S3_KEY'
         ),
-        
+
         string(
             defaultValue: "code/sms/sms-dbconnector-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
             name: 'DB_CONNECTOR_LAMBDA_S3_KEY'
         ),
-        
+
         string(
             description: 'vietguys credential',
             name: 'VIETGUYS_PASS'          
@@ -67,16 +67,47 @@ properties([
             description: 'dtac credential',
             name: 'DTAC_PASS'          
         ),
-        
+
+        string(
+            defaultValue: "code/sms/sms-processor-lambda-0.0.1-RELEASE.jar",
+            description: 'bucket key for lambda jar',
+            name: 'new-reg-dev-lc-sms-processor-lambda-s3-key'
+        ),
+
+        string(
+            defaultValue: "code/sms/sms-mapper-lambda-0.0.1-RELEASE.jar",
+            description: 'bucket key for lambda jar',
+            name: 'new-reg-dev-lc-sms-mapper-lambda-s3-key'
+        ),
+
+        string(
+            defaultValue: "code/sms/sms-retry-lambda-0.0.1-RELEASE.jar",
+            description: 'bucket key for lambda jar',
+            name: 'new-reg-dev-lc-sms-retry-lambda-s3-key'
+        ),
+
+        string(
+            defaultValue: "code/sms/sms-status-lambda-0.0.1-RELEASE.jar",
+            description: 'bucket key for lambda jar',
+            name: 'new-reg-dev-lc-sms-status-lambda-s3-key'
+        ),
+
+        string(
+            defaultValue: "code/sms/sms-dlq-lambda-0.0.1-RELEASE.jar",
+            description: 'bucket key for lambda jar',
+            name: 'new-reg-dev-lc-sms-dlq-lambda-s3-key'
+        ),
+
+        string(
+            defaultValue: "code/sms/sms-dbconnector-lambda-0.0.1-RELEASE.jar",
+            description: 'bucket key for lambda jar',
+            name: 'new-reg-dev-lc-sms-connector-lambda-s3-key'
+        ),
+
         booleanParam(
             defaultValue: false,
             description: 'select true if env is nonprod and you want to promote artifact',
             name: 'PROMOTE'       
-        ),
-        choice(
-            choices: 'No\nYes',
-            description: 'select yes if you want to deploy for first time',
-            name: 'firstTimeDeploy'
         )
     ])
 ])
@@ -114,15 +145,17 @@ node('linux') {
         }
 
         stage('Build ') {
-            sh 'curl --create-dirs "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/temp-aws/awscliv2.zip"'
-            sh 'unzip -u /temp-aws/awscliv2.zip -d /temp-aws'
-            sh "/temp-aws/aws/install -b /usr/local/bin -i /usr/local/bin --update"
-            sh 'rm -rf /temp-aws'
-            sh "npm install -g aws-cdk@2.24.1"
-        	sh "npm install -g n@8.2.0"
-        	sh "n 16.15.1"
-        	sh "mvn spotless:apply"
-        	sh "mvn clean install"
+//             if ((sh(returnStdout: true, script: 'aws --version').trim()).startsWith("aws-cli/1.")) {
+//                 sh 'curl --create-dirs "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/temp-aws/awscliv2.zip"'
+//                 sh 'unzip -u /temp-aws/awscliv2.zip -d /temp-aws'
+//                 sh "/temp-aws/aws/install -b /usr/local/bin -i /usr/local/bin --update"
+//                 sh 'rm -rf /temp-aws'
+//             }
+//             sh "npm install -g aws-cdk@2.24.1"
+//         	sh "npm install -g n@8.2.0"
+//         	sh "n 16.15.1"
+//         	sh "mvn spotless:apply"
+//         	sh "mvn clean install"
         }
 
         stage ("deploy") {
@@ -141,15 +174,35 @@ node('linux') {
                 def outputsMap = outputsJson.Stacks[0].Outputs.collectEntries { ["${it.OutputKey}", "${it.OutputValue}"] }
                 def outputsMapJson = new groovy.json.JsonBuilder(outputsMap)
                 echo "outputsMapJson: ${outputsMapJson}"
-                if (firstTimeDeploy == "Yes") {
+                def codeDeployIAMRoleArn = ""
+                def codeDeployIAMRoleID = ""
+                def kmsKeyID = ""
+                def snsTopicArn = ""
+                try {
+                    codeDeployIAMRoleArn = sh(returnStdout: true, script: "aws iam get-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role").trim()["Role"]["Arn"]
+                    echo "codeDeployIAMRoleArn: ${codeDeployIAMRoleArn}"
+                    codeDeployIAMRoleID = sh(returnStdout: true, script: "aws iam get-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role").trim()["Role"]["RoleId"]
+                    echo "codeDeployIAMRoleID: ${codeDeployIAMRoleID}"
+                } catch (Exception e) {
+                    echo "Exception: ${e}"
+                    kmsKeyID = outputsMapJson.toString().split(',').findAll { it.contains("kms") }.collect { it.split(':')[1].replaceAll('"', '') }
+                    echo "kmsKeyID: ${kmsKeyID}"
+                    snsTopicArn = outputsMapJson.toString().split(',').findAll { it.contains("sns") }.collect { it.split(':')[1].replaceAll('"', '') }
+                    echo "snsTopicArn: ${snsTopicArn}"
+                    codeDeployIAMRoleArn = null
+                    codeDeployIAMRoleID = null
+                }
+                if (codeDeployIAMRoleArn == null || codeDeployIAMRoleID == null || codeDeployIAMRoleArn.isEmpty() || codeDeployIAMRoleID.isEmpty()) {
                     def codeDeployIAMRole = sh(returnStdout: true, script: "aws iam create-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --assume-role-policy-document file://./assume-role-policy.json --tags Key=lm_troux_uid,Value=${params.TROUX_UID} Key=aws_iam_permission_boundary_exempt,Value=true").trim()
+                    echo "codeDeployIAMRole: ${codeDeployIAMRole}"
                     sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/intl-global-deny"
                     sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/cloud-services/cloud-services-global-deny"
                     sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/intl-cs-global-deny-services"
                     sh "aws iam put-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-policy --policy-document file://./sms-bg-policy.json"
-                    def codeDeployIAMRoleArn = codeDeployIAMRole["Role"]["Arn"]
-                    def codeDeployIAMRoleID = codeDeployIAMRole["Role"]["RoleId"]
+                    codeDeployIAMRoleArn = codeDeployIAMRole["Role"]["Arn"]
+                    codeDeployIAMRoleID = codeDeployIAMRole["Role"]["RoleId"]
                     sh "aws s3api get-bucket-policy --bucket ${codeDeployAppSpecBucket} --query Policy --output text > policy.json"
+                    sh "cat policy.json"
                     sh "jq <policy.json 'del(.Statement[0].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
                     sh "jq <policy.json 'del(.Statement[1].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
                     sh "jq <policy.json 'del(.Statement[2].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
@@ -158,9 +211,9 @@ node('linux') {
                     sh "jq <policy.json '.Statement[0].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[1].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[2].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[3].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"]'> temp2.json && mv temp2.json policy.json"
                     sh "cat policy.json"
                     sh "aws s3api put-bucket-policy --bucket ${codeDeployAppSpecBucket} --policy file://policy.json"
-                    def kmsKeyID = outputsMapJson.toString().split(',').findAll { it.contains("kms") }.collect { it.split(':')[1].replaceAll('"', '') }
+                    kmsKeyID = outputsMapJson.toString().split(',').findAll { it.contains("kms") }.collect { it.split(':')[1].replaceAll('"', '') }
                     echo "kmsKeyID: ${kmsKeyID}"
-                    def snsTopicArn = outputsMapJson.toString().split(',').findAll { it.contains("sns") }.collect { it.split(':')[1].replaceAll('"', '') }
+                    snsTopicArn = outputsMapJson.toString().split(',').findAll { it.contains("sns") }.collect { it.split(':')[1].replaceAll('"', '') }
                     echo "snsTopicArn: ${snsTopicArn}"
                     def KMSKeyPloicy = readJson file: './kms-key-policy.json'
                     KMSKeyPloicy["Statement"][0]["Principal"]["AWS"] = "arn:aws:iam::${accountId}:root"
@@ -194,7 +247,7 @@ node('linux') {
                             currentlyPublishedLambdaVersion = 0
                         }
                         lambdaversionobject['firstversion'] = currentlyPublishedLambdaVersion
-                        def updateFunctionCode = sh(returnStdout: true, script: "aws lambda update-function-code --function-name ${lambda} --s3-bucket ${codeDeployAppSpecBucket} --s3-key ${params.PROGRAM}/${currentEnv}/sms/${env.BUILD_NUMBER}/appspec.yml --publish").trim()
+                        def updateFunctionCode = sh(returnStdout: true, script: "aws lambda update-function-code --function-name ${lambda} --s3-bucket ${codeDeployAppSpecBucket} --s3-key ${params.new-${lambda}-s3-key}").trim()
                         echo "updateFunctionCode: ${updateFunctionCode}"
                         sleep time: 5, unit: 'SECONDS'
                         try {
