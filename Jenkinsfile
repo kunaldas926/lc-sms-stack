@@ -185,9 +185,9 @@ node('linux') {
                     echo "codeDeployIAMRoleID: ${codeDeployIAMRoleID}"
                 } catch (Exception e) {
                     echo "Exception: ${e}"
-                    kmsKeyID = outputsMapJson.toString().split(',').findAll { it.contains("kms") }.collect { it.split(':')[1].replaceAll('"', '') }
+                    kmsKekmsKeyID = outputsMapJson.findFirst { it.key.contains("kms") }
+                    snsTopicArn = outputsMapJson.findFirst { it.key.contains("sns") }
                     echo "kmsKeyID: ${kmsKeyID}"
-                    snsTopicArn = outputsMapJson.toString().split(',').findAll { it.contains("sns") }.collect { it.split(':')[1].replaceAll('"', '') }
                     echo "snsTopicArn: ${snsTopicArn}"
                     codeDeployIAMRoleArn = null
                     codeDeployIAMRoleID = null
