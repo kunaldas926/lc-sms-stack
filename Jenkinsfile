@@ -139,7 +139,8 @@ def deployCdk(currentEnv, accountId, region) {
 
 
 node('linux') {
-    deployTo(env: getCountryEnv())
+    def countryEnvironment = getCountryEnv()
+    deployTo(env: countryEnvironment)
         stage('Clone') {
             checkout scm
         }
