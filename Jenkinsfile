@@ -168,7 +168,7 @@ node('linux') {
         withAWS(
         credentials: getAWSCredentialID(environment: currentEnv),
             region: getAWSRegion()) {
-                deployCdk(currentEnv, accountId, region)
+//                 deployCdk(currentEnv, accountId, region)
                 def outputs = sh(returnStdout: true, script: "aws cloudformation describe-stacks --stack-name ${params.PROGRAM}-${currentEnv}-lc-sms-stack --no-paginate").trim()
                 def outputsJson = readJSON text: outputs
                 outputsMap = outputsJson.Stacks[0].Outputs.collectEntries { ["${it.OutputKey}", "${it.OutputValue}"] }
@@ -343,22 +343,23 @@ node('linux') {
                     def deploymentId = createDeploymentOutput.split('deploymentId:')[1].split(',')[0].trim()
                     echo "deploymentId: ${deploymentId}"
                     sleep time: 10, unit: 'SECONDS'
+                }
+            }
+
+            stage('upload and promote artifact') {
+                if(params.PROMOTE.toBoolean() == true && getEnvFromBuildPath(env.JOB_NAME) == 'nonprod') {
+                    timeout(time: 600, unit: 'SECONDS') {
+                              input(id: 'userInput', message: 'push to artifact and promote ?', ok: 'Yes')
+                    }
+
+                    def artifacts = ['prod_Jenkinsfile']
+                    artifactoryUploadFiles files:artifacts
+
+                    promoteToProd(approver:'Jose.Francis',
+                        email:'Jose.Francis@libertymutual.com.hk',
+                        version:env.BUILD_NUMBER){}
+               }
             }
         }
-
-        stage('upload and promote artifact') {
-            if(params.PROMOTE.toBoolean() == true && getEnvFromBuildPath(env.JOB_NAME) == 'nonprod') {
-                timeout(time: 600, unit: 'SECONDS') {
-                          input(id: 'userInput', message: 'push to artifact and promote ?', ok: 'Yes')
-                }
-
-                def artifacts = ['prod_Jenkinsfile']
-                artifactoryUploadFiles files:artifacts
-
-                promoteToProd(approver:'Jose.Francis',
-                    email:'Jose.Francis@libertymutual.com.hk',
-                    version:env.BUILD_NUMBER){}
-           }
-        }
     }
-}}
+}
