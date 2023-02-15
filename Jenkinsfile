@@ -175,18 +175,16 @@ node('linux') {
                 echo "outputsMap: ${outputsMap}"
                 outputsMapJson = groovy.json.JsonOutput.toJson(outputsMap)
                 echo "outputsMapJson: ${outputsMapJson}"
-
-
-//                 outputsMapJson = new groovy.json.JsonBuilder(outputsMap)
-//                 echo "outputsMapJson: ${outputsMapJson}"
                 def codeDeployIAMRoleArn = ""
                 def codeDeployIAMRoleID = ""
                 def kmsKeyID = ""
                 def snsTopicArn = ""
                 try {
-                    codeDeployIAMRoleArn = sh(returnStdout: true, script: "aws iam get-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role").trim()["Role"]["Arn"]
+                    codeDeployIAMRoleArn = sh(returnStdout: true, script: "aws iam get-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role").trim()
+                    codeDeployIAMRoleArn = codeDeployIAMRoleArn["Role"]["Arn"]
                     echo "codeDeployIAMRoleArn: ${codeDeployIAMRoleArn}"
-                    codeDeployIAMRoleID = sh(returnStdout: true, script: "aws iam get-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role").trim()["Role"]["RoleId"]
+                    codeDeployIAMRoleID = sh(returnStdout: true, script: "aws iam get-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role").trim()
+                    codeDeployIAMRoleID = codeDeployIAMRoleID["Role"]["RoleId"]
                     echo "codeDeployIAMRoleID: ${codeDeployIAMRoleID}"
                     kmsKekmsKeyID = outputsMapJson.findFirst { it.key.contains("kms") }
                     snsTopicArn = outputsMapJson.findFirst { it.key.contains("sns") }
