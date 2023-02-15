@@ -172,7 +172,7 @@ node('linux') {
                 def outputs = sh(returnStdout: true, script: "aws cloudformation describe-stacks --stack-name ${params.PROGRAM}-${currentEnv}-lc-sms-stack --no-paginate").trim()
                 def outputsJson = readJSON text: outputs
                 outputsMap = outputsJson.Stacks[0].Outputs.collectEntries { ["${it.OutputKey}", "${it.OutputValue}"] }
-                outputsMapJson = new groovy.json.JsonBuilder(outputsMap)
+//                 outputsMapJson = new groovy.json.JsonBuilder(outputsMap)
                 echo "outputsMapJson: ${outputsMapJson}"
                 def codeDeployIAMRoleArn = ""
                 def codeDeployIAMRoleID = ""
