@@ -200,52 +200,37 @@ node('linux') {
                     echo "snsTopicArn: ${snsTopicArn}"
                 } catch (Exception e) {
                     echo "Exception: ${e}"
-//                     kmsKekmsKeyID = outputsMapJson.findFirst { it.key.contains("kms") }
-//                     snsTopicArn = outputsMapJson.findFirst { it.key.contains("sns") }
-//                     echo "kmsKeyID: ${kmsKeyID}"
-//                     echo "snsTopicArn: ${snsTopicArn}"
-//                     codeDeployIAMRoleArn = null
-//                     codeDeployIAMRoleID = null
+                    codeDeployIAMRoleArn = null
+                    codeDeployIAMRoleID = null
                 }
-//                 if (codeDeployIAMRoleArn == null || codeDeployIAMRoleID == null || codeDeployIAMRoleArn.isEmpty() || codeDeployIAMRoleID.isEmpty()) {
-//                     def codeDeployIAMRole = sh(returnStdout: true, script: "aws iam create-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --assume-role-policy-document file://./assume-role-policy.json --tags Key=lm_troux_uid,Value=${params.TROUX_UID} Key=aws_iam_permission_boundary_exempt,Value=true").trim()
-//                     echo "codeDeployIAMRole: ${codeDeployIAMRole}"
-//                     sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/intl-global-deny"
-//                     sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/cloud-services/cloud-services-global-deny"
-//                     sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/intl-cs-global-deny-services"
-//                     sh "aws iam put-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-policy --policy-document file://./sms-bg-policy.json"
-//                     codeDeployIAMRoleArn = codeDeployIAMRole["Role"]["Arn"]
-//                     codeDeployIAMRoleID = codeDeployIAMRole["Role"]["RoleId"]
-//                     sh "aws s3api get-bucket-policy --bucket ${codeDeployAppSpecBucket} --query Policy --output text > policy.json"
-//                     sh "cat policy.json"
-//                     sh "jq <policy.json 'del(.Statement[0].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
-//                     sh "jq <policy.json 'del(.Statement[1].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
-//                     sh "jq <policy.json 'del(.Statement[2].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
-//                     sh "jq <policy.json 'del(.Statement[3].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
-//                     sh "cat policy.json"
-//                     sh "jq <policy.json '.Statement[0].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[1].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[2].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[3].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"]'> temp2.json && mv temp2.json policy.json"
-//                     sh "cat policy.json"
-//                     sh "aws s3api put-bucket-policy --bucket ${codeDeployAppSpecBucket} --policy file://policy.json"
-//                     kmsKeyID = outputsMapJson.toString().split(',').findAll { it.contains("kms") }.collect { it.split(':')[1].replaceAll('"', '') }
-//                     echo "kmsKeyID: ${kmsKeyID}"
-//                     snsTopicArn = outputsMapJson.toString().split(',').findAll { it.contains("sns") }.collect { it.split(':')[1].replaceAll('"', '') }
-//                     echo "snsTopicArn: ${snsTopicArn}"
-//                     def KMSKeyPloicy = readJson file: './kms-key-policy.json'
-//                     KMSKeyPloicy["Statement"][0]["Principal"]["AWS"] = "arn:aws:iam::${accountId}:root"
-//                     KMSKeyPloicy["Statement"][1]["Principal"]["AWS"] = "arn:aws:iam::${accountId}:root"
-//                     KMSKeyPloicy["Statement"][2]["Principal"]["AWS"] = codeDeployIAMRoleArn
-//                     writeJSON file: './kms-key-policy.json', json: KMSKeyPloicy
-//                     sh "aws kms put-key-policy --key-id ${kmsKeyID} --policy-name default --policy file://./kms-key-policy.json"
-//                 } else {
-//                     codeDeployIAMRoleArn = sh(returnStdout: true, script: "aws iam get-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role").trim()["Role"]["Arn"]
-//                     echo "codeDeployIAMRoleArn: ${codeDeployIAMRoleArn}"
-//                     codeDeployIAMRoleID = sh(returnStdout: true, script: "aws iam get-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role").trim()["Role"]["RoleId"]
-//                     echo "codeDeployIAMRoleID: ${codeDeployIAMRoleID}"
-//                     kmsKeyID = outputsMapJson.toString().split(',').findAll { it.contains("kms") }.collect { it.split(':')[1].replaceAll('"', '') }
-//                     echo "kmsKeyID: ${kmsKeyID}"
-//                     snsTopicArn = outputsMapJson.toString().split(',').findAll { it.contains("sns") }.collect { it.split(':')[1].replaceAll('"', '') }
-//                     echo "snsTopicArn: ${snsTopicArn}"
-//                 }
+                if (codeDeployIAMRoleArn == null || codeDeployIAMRoleID == null || codeDeployIAMRoleArn.isEmpty() || codeDeployIAMRoleID.isEmpty()) {
+                    def codeDeployIAMRole = sh(returnStdout: true, script: "aws iam get-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role").trim()
+                    echo "codeDeployIAMRole: ${codeDeployIAMRole}"
+                    codeDeployIAMRoleArn = codeDeployIAMRole["Role"]["Arn"]
+                    codeDeployIAMRoleID = codeDeployIAMRole["Role"]["RoleId"]
+                    sh "aws s3api get-bucket-policy --bucket ${codeDeployAppSpecBucket} --query Policy --output text > policy.json"
+                    sh "cat policy.json"
+                    sh "jq <policy.json 'del(.Statement[0].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
+                    sh "jq <policy.json 'del(.Statement[1].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
+                    sh "jq <policy.json 'del(.Statement[2].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
+                    sh "jq <policy.json 'del(.Statement[3].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
+                    sh "cat policy.json"
+                    sh "jq <policy.json '.Statement[0].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[1].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[2].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[3].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"]'> temp2.json && mv temp2.json policy.json"
+                    sh "cat policy.json"
+                    sh "aws s3api put-bucket-policy --bucket ${codeDeployAppSpecBucket} --policy file://policy.json"
+                    kmsKeyID = outputsMapJson.toString().split(',').findAll { it.contains("kms") }.collect { it.split(':')[1].replaceAll('"', '') }
+                    echo "kmsKeyID: ${kmsKeyID}"
+                    snsTopicArn = outputsMapJson.toString().split(',').findAll { it.contains("sns") }.collect { it.split(':')[1].replaceAll('"', '') }
+                    echo "snsTopicArn: ${snsTopicArn}"
+                    def KMSKeyPloicy = readJson file: './kms-key-policy.json'
+                    KMSKeyPloicy["Statement"][0]["Principal"]["AWS"] = "arn:aws:iam::${accountId}:root"
+                    KMSKeyPloicy["Statement"][1]["Principal"]["AWS"] = "arn:aws:iam::${accountId}:root"
+                    KMSKeyPloicy["Statement"][2]["Principal"]["AWS"] = codeDeployIAMRoleArn
+                    writeJSON file: './kms-key-policy.json', json: KMSKeyPloicy
+                    sh "aws kms put-key-policy --key-id ${kmsKeyID} --policy-name default --policy file://./kms-key-policy.json"
+                } else {
+                    echo "Skipping role creation"
+                }
                 try {
                     def smsLambdaList = outputsMapJson.toString().split(',').findAll { it.contains("lambdaoutput") }.collect { it.split(':')[1].replaceAll('"', '') }
                     def apppecconflist = []
