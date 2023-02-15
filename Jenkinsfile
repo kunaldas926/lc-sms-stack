@@ -178,27 +178,27 @@ node('linux') {
                 def codeDeployIAMRoleID = ""
                 def kmsKeyID = ""
                 def snsTopicArn = ""
-                try {
+//                 try {
                     codeDeployIAMRoleArn = sh(returnStdout: true, script: "aws iam get-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role").trim()["Role"]["Arn"]
                     echo "codeDeployIAMRoleArn: ${codeDeployIAMRoleArn}"
                     codeDeployIAMRoleID = sh(returnStdout: true, script: "aws iam get-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role").trim()["Role"]["RoleId"]
                     echo "codeDeployIAMRoleID: ${codeDeployIAMRoleID}"
-                } catch (Exception e) {
-                    echo "Exception: ${e}"
+//                 } catch (Exception e) {
+//                     echo "Exception: ${e}"
                     kmsKekmsKeyID = outputsMapJson.findFirst { it.key.contains("kms") }
                     snsTopicArn = outputsMapJson.findFirst { it.key.contains("sns") }
-                    echo "kmsKeyID: ${kmsKeyID}"
-                    echo "snsTopicArn: ${snsTopicArn}"
-                    codeDeployIAMRoleArn = null
-                    codeDeployIAMRoleID = null
-                }
-                if (codeDeployIAMRoleArn == null || codeDeployIAMRoleID == null || codeDeployIAMRoleArn.isEmpty() || codeDeployIAMRoleID.isEmpty()) {
-                    def codeDeployIAMRole = sh(returnStdout: true, script: "aws iam create-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --assume-role-policy-document file://./assume-role-policy.json --tags Key=lm_troux_uid,Value=${params.TROUX_UID} Key=aws_iam_permission_boundary_exempt,Value=true").trim()
-                    echo "codeDeployIAMRole: ${codeDeployIAMRole}"
-                    sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/intl-global-deny"
-                    sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/cloud-services/cloud-services-global-deny"
-                    sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/intl-cs-global-deny-services"
-                    sh "aws iam put-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-policy --policy-document file://./sms-bg-policy.json"
+//                     echo "kmsKeyID: ${kmsKeyID}"
+//                     echo "snsTopicArn: ${snsTopicArn}"
+//                     codeDeployIAMRoleArn = null
+//                     codeDeployIAMRoleID = null
+//                 }
+//                 if (codeDeployIAMRoleArn == null || codeDeployIAMRoleID == null || codeDeployIAMRoleArn.isEmpty() || codeDeployIAMRoleID.isEmpty()) {
+//                     def codeDeployIAMRole = sh(returnStdout: true, script: "aws iam create-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --assume-role-policy-document file://./assume-role-policy.json --tags Key=lm_troux_uid,Value=${params.TROUX_UID} Key=aws_iam_permission_boundary_exempt,Value=true").trim()
+//                     echo "codeDeployIAMRole: ${codeDeployIAMRole}"
+//                     sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/intl-global-deny"
+//                     sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/cloud-services/cloud-services-global-deny"
+//                     sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/intl-cs-global-deny-services"
+//                     sh "aws iam put-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-policy --policy-document file://./sms-bg-policy.json"
                     codeDeployIAMRoleArn = codeDeployIAMRole["Role"]["Arn"]
                     codeDeployIAMRoleID = codeDeployIAMRole["Role"]["RoleId"]
                     sh "aws s3api get-bucket-policy --bucket ${codeDeployAppSpecBucket} --query Policy --output text > policy.json"
