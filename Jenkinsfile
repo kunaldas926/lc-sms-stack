@@ -151,11 +151,11 @@ node('linux') {
                 sh "/temp-aws/aws/install -b /usr/local/bin -i /usr/local/bin --update"
                 sh 'rm -rf /temp-aws'
             }
-            sh "npm install -g aws-cdk@2.24.1"
-        	sh "npm install -g n@8.2.0"
-        	sh "n 16.15.1"
-        	sh "mvn spotless:apply"
-        	sh "mvn clean install"
+//             sh "npm install -g aws-cdk@2.24.1"
+//         	sh "npm install -g n@8.2.0"
+//         	sh "n 16.15.1"
+//         	sh "mvn spotless:apply"
+//         	sh "mvn clean install"
         }
 
         stage ("deploy") {
