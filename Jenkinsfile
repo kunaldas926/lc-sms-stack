@@ -151,11 +151,11 @@ node('linux') {
                 sh "/temp-aws/aws/install -b /usr/local/bin -i /usr/local/bin --update"
                 sh 'rm -rf /temp-aws'
             }
-//             sh "npm install -g aws-cdk@2.24.1"
-//         	sh "npm install -g n@8.2.0"
-//         	sh "n 16.15.1"
-//         	sh "mvn spotless:apply"
-//         	sh "mvn clean install"
+            sh "npm install -g aws-cdk@2.24.1"
+        	sh "npm install -g n@8.2.0"
+        	sh "n 16.15.1"
+        	sh "mvn spotless:apply"
+        	sh "mvn clean install"
         }
 
         stage ("deploy") {
@@ -247,7 +247,8 @@ node('linux') {
                             currentlyPublishedLambdaVersion = 0
                         }
                         lambdaversionobject['firstversion'] = currentlyPublishedLambdaVersion
-                        def updateFunctionCode = sh(returnStdout: true, script: "aws lambda update-function-code --function-name ${lambda} --s3-bucket ${codeDeployAppSpecBucket} --s3-key ${params.new-${lambda}-s3-key}").trim()
+                        def s3Key = "params.new-${lambda}-s3-key"
+                        def updateFunctionCode = sh(returnStdout: true, script: "aws lambda update-function-code --function-name ${lambda} --s3-bucket ${codeDeployAppSpecBucket} --s3-key ${s3Key}").trim()
                         echo "updateFunctionCode: ${updateFunctionCode}"
                         sleep time: 5, unit: 'SECONDS'
                         try {
