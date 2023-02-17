@@ -151,7 +151,7 @@ node('linux') {
             def apppecconflist = []
             def lambdaversionobject = [:]
             def lambdaS3KeyList = []
-            // TODO: Write logic to populate lambdaS3KeyList
+
         }
 
         stage ("Update CodeDeploy Service Role and KMS Policy") {
