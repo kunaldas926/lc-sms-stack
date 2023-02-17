@@ -19,43 +19,43 @@ properties([
         string(
             defaultValue: "code/sms/sms-connector-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
-            name: 'CONNECTOR_LAMBDA_S3_KEY'
+            name: 'connector-lambda-s3-key'
         ),
 
         string(
             defaultValue: "code/sms/sms-processor-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
-            name: 'PROCESSOR_LAMBDA_S3_KEY'
+            name: 'processor-lambda-s3-key'
         ),
 
         string(
             defaultValue: "code/sms/sms-mapper-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
-            name: 'MAPPER_LAMBDA_S3_KEY'
+            name: 'mapper-lambda-s3-key'
         ),
 
         string(
             defaultValue: "code/sms/sms-retry-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
-            name: 'RETRY_LAMBDA_S3_KEY'
+            name: 'retry-lambda-s3-key'
         ),
 
         string(
             defaultValue: "code/sms/sms-status-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
-            name: 'STATUS_LAMBDA_S3_KEY'
+            name: 'status-lambda-s3-key'
         ),
 
         string(
             defaultValue: "code/sms/sms-dlq-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
-            name: 'DLQ_LAMBDA_S3_KEY'
+            name: 'dlq-lambda-s3-key'
         ),
 
         string(
             defaultValue: "code/sms/sms-dbconnector-lambda-0.0.1-RELEASE.jar",
             description: 'bucket key for lambda jar',
-            name: 'DB_CONNECTOR_LAMBDA_S3_KEY'
+            name: 'db-connector-lambda-s3-key'
         ),
 
         string(
@@ -66,42 +66,6 @@ properties([
         string(
             description: 'dtac credential',
             name: 'DTAC_PASS'          
-        ),
-
-        string(
-            defaultValue: "code/sms/sms-processor-lambda-0.0.1-RELEASE.jar",
-            description: 'bucket key for lambda jar',
-            name: 'new-reg-dev-lc-sms-processor-lambda-s3-key'
-        ),
-
-        string(
-            defaultValue: "code/sms/sms-mapper-lambda-0.0.1-RELEASE.jar",
-            description: 'bucket key for lambda jar',
-            name: 'new-reg-dev-lc-sms-mapper-lambda-s3-key'
-        ),
-
-        string(
-            defaultValue: "code/sms/sms-retry-lambda-0.0.1-RELEASE.jar",
-            description: 'bucket key for lambda jar',
-            name: 'new-reg-dev-lc-sms-retry-lambda-s3-key'
-        ),
-
-        string(
-            defaultValue: "code/sms/sms-status-lambda-0.0.1-RELEASE.jar",
-            description: 'bucket key for lambda jar',
-            name: 'new-reg-dev-lc-sms-status-lambda-s3-key'
-        ),
-
-        string(
-            defaultValue: "code/sms/sms-dlq-lambda-0.0.1-RELEASE.jar",
-            description: 'bucket key for lambda jar',
-            name: 'new-reg-dev-lc-sms-dlq-lambda-s3-key'
-        ),
-
-        string(
-            defaultValue: "code/sms/sms-dbconnector-lambda-0.0.1-RELEASE.jar",
-            description: 'bucket key for lambda jar',
-            name: 'new-reg-dev-lc-sms-connector-lambda-s3-key'
         ),
 
         booleanParam(
@@ -123,13 +87,13 @@ def deployCdk(currentEnv, accountId, region) {
 			-profile ${currentEnv} \
 			-lm_troux_uid ${params.TROUX_UID} \
 			-program ${params.PROGRAM} \
-			-connectorLambdaS3Key ${params.CONNECTOR_LAMBDA_S3_KEY} \
-			-processorLambdaS3Key ${params.PROCESSOR_LAMBDA_S3_KEY} \
-			-mapperLambdaS3Key ${params.MAPPER_LAMBDA_S3_KEY} \
-			-dbConnectorLambdaS3Key ${params.DB_CONNECTOR_LAMBDA_S3_KEY} \
-			-retryLambdaS3Key ${params.RETRY_LAMBDA_S3_KEY} \
-			-smsStatusLambdaS3Key ${params.STATUS_LAMBDA_S3_KEY} \
-			-dlqLambdaS3Key ${params.DLQ_LAMBDA_S3_KEY} \
+			-connectorLambdaS3Key ${params.sms-connector-lambda-s3-key} \
+			-processorLambdaS3Key ${params.processor-lambda-s3-key} \
+			-mapperLambdaS3Key ${params.mapper-lambda-s3-key} \
+			-dbConnectorLambdaS3Key ${params.db-connector-lambda-s3-key} \
+			-retryLambdaS3Key ${params.retry-lambda-s3-key} \
+			-smsStatusLambdaS3Key ${params.status-lambda-s3-key} \
+			-dlqLambdaS3Key ${params.dlq-lambda-s3-key} \
 			-vietguyPass ${params.VIETGUYS_PASS} \
 			-dtacPass ${params.DTAC_PASS} \
 			-accountId ${accountId} \
@@ -169,68 +133,136 @@ node('linux') {
         credentials: getAWSCredentialID(environment: currentEnv),
             region: getAWSRegion()) {
 //                 deployCdk(currentEnv, accountId, region)
-                def outputs = sh(returnStdout: true, script: "aws cloudformation describe-stacks --stack-name ${params.PROGRAM}-${currentEnv}-lc-sms-stack --no-paginate").trim()
-                def outputsJson = readJSON text: outputs
-                outputsMap = outputsJson.Stacks[0].Outputs.collectEntries { ["${it.OutputKey}", "${it.OutputValue}"] }
-                echo "outputsMap: ${outputsMap}"
-                outputsMapJson = groovy.json.JsonOutput.toJson(outputsMap)
-                echo "outputsMapJson: ${outputsMapJson}"
+        }
+    }
+    stage ("Populate CDK Outputs") {
+        def outputs = sh(returnStdout: true, script: "aws cloudformation describe-stacks --stack-name ${params.PROGRAM}-${currentEnv}-lc-sms-stack --no-paginate").trim()
+        def outputsJson = readJSON text: outputs
+        outputsMap = outputsJson.Stacks[0].Outputs.collectEntries { ["${it.OutputKey}", "${it.OutputValue}"] }
+        echo "outputsMap: ${outputsMap}"
+        outputsMapJson = groovy.json.JsonOutput.toJson(outputsMap)
+        echo "outputsMapJson: ${outputsMapJson}"
+        def kmsKekmsKeyID = outputsMapJson.findFirst { it.key.contains("kms") }
+        echo "kmsKekmsKeyID: ${kmsKekmsKeyID}"
+        def snsTopicArn = outputsMapJson.findFirst { it.key.contains("sns") }
+        echo "snsTopicArn: ${snsTopicArn}"
+        def smsLambdaList = outputsMapJson.toString().split(',').findAll { it.contains("lambdaoutput") }.collect { it.split(':')[1].replaceAll('"', '') }
+        echo "smsLambdaList: ${smsLambdaList}"
+        def apppecconflist = []
+        def lambdaversionobject = [:]
+        def lambdaS3KeyList = []
+
+    }
+    stage ("Update CodeDeploy Service Role and KMS Policy") {
+        def codeDeployIAMRoleArn = null
+        def codeDeployIAMRoleID = null
+        try {
+            def getRoleOutput = sh(returnStdout: true, script: "aws iam get-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role").trim()
+            echo "getRoleOutput: ${getRoleOutput}"
+            codeDeployIAMRoleArn = getRoleOutput["Role"]["Arn"]
+            echo "codeDeployIAMRoleArn: ${codeDeployIAMRoleArn}"
+            codeDeployIAMRoleID = getRoleOutput["Role"]["RoleId"]
+            echo "codeDeployIAMRoleID: ${codeDeployIAMRoleID}"
+        } catch (Exception e) {
+            echo "Role ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role does not exist"
+            echo "caught exception: ${e}"
+            def createRoleOutput = sh(returnStdout: true, script: "aws iam create-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --assume-role-policy-document file://./assume-role-policy.json --tags Key=lm_troux_uid,Value=${params.TROUX_UID} Key=aws_iam_permission_boundary_exempt,Value=true").trim()
+            echo "createRoleOutput: ${createRoleOutput}"
+            codeDeployIAMRoleArn = createRoleOutput["Role"]["Arn"]
+            echo "codeDeployIAMRoleArn: ${codeDeployIAMRoleArn}"
+            codeDeployIAMRoleID = createRoleOutput["Role"]["RoleId"]
+            echo "codeDeployIAMRoleID: ${codeDeployIAMRoleID}"
+        }
+        try {
+            def kMSKeyPloicy = readJson file: './kms-key-policy.json'
+            kMSKeyPloicy["Statement"][0]["Principal"]["AWS"] = "arn:aws:iam::${accountId}:root"
+            kMSKeyPloicy["Statement"][1]["Principal"]["AWS"] = "arn:aws:iam::${accountId}:root"
+            kMSKeyPloicy["Statement"][2]["Principal"]["AWS"] = codeDeployIAMRoleArn
+            writeJSON file: './kms-key-policy.json', json: kMSKeyPloicy
+            sh "aws kms put-key-policy --key-id ${kmsKeyID} --policy-name default --policy file://./kms-key-policy.json"
+        } catch (Exception e) {
+            echo "caught exception: ${e}"
+        }
+    }
+    stage ("Update S3 Bucket Policy") {
+        sh "aws s3api get-bucket-policy --bucket ${codeDeployAppSpecBucket} --query Policy --output text > policy.json"
+        sh "cat policy.json"
+        sh "jq <policy.json 'del(.Statement[0].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
+        sh "jq <policy.json 'del(.Statement[1].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
+        sh "jq <policy.json 'del(.Statement[2].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
+        sh "jq <policy.json 'del(.Statement[3].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
+        sh "cat policy.json"
+        sh "jq <policy.json '.Statement[0].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[1].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[2].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[3].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"]'> temp2.json && mv temp2.json policy.json"
+        sh "cat policy.json"
+        sh "aws s3api put-bucket-policy --bucket ${codeDeployAppSpecBucket} --policy file://policy.json"
+        sh "rm -rf policy.json"
+    }
+    stage ("Update Lambda Versions") {
+        for (lambda in smsLambdaList) {
+            echo "lambda: ${lambda}"
+            lambdaversionobject['lambdaname'] = lambda
+            try {
+                def currentlyPublishedLambdaVersionOutput = sh(returnStdout: true, script: "aws lambda list-versions-by-function --function-name ${lambda} --no-paginate --query \"max_by(Versions, &to_number(to_number(Version) || \'0\'))\"").trim()
+                echo "currentlyPublishedLambdaVersion: ${currentlyPublishedLambdaVersion}"
+                def currentlyPublishedLambdaVersionOutputJson = readJSON(text: currentlyPublishedLambdaVersionOutput)
+                echo "currentlyPublishedLambdaVersionOutputJson: ${currentlyPublishedLambdaVersionOutputJson}"
+                def currentlyPublishedLambdaVersion = currentlyPublishedLambdaVersion["Version"]
+                echo "currentlyPublishedLambdaVersion: ${currentlyPublishedLambdaVersion}"
+            } catch (Exception e) {
+                echo "No published lambda version found"
+                currentlyPublishedLambdaVersion = 0
+            }
+            lambdaversionobject['firstversion'] = currentlyPublishedLambdaVersion
+
+            // lambda = reg-dev-sms-connector-lambda
+            // key = connector-lambda-s3-key
+
+            // params = connector-lambda-s3-key
+
+            // ${} =  code/sms/sms-connector-lambda-0.0.1-RELEASE.jar
+
+            def s3Key = "${lambda}".split("reg-${currentEnv}")[1]
+            s3Key = "params.${s3Key}"
+            s3Key = "${s3Key}"
+            def updateFunctionCode = sh(returnStdout: true, script: "aws lambda update-function-code --function-name ${lambda} --s3-bucket ${codeDeployAppSpecBucket} --s3-key ${s3Key}").trim()
+            echo "updateFunctionCode: ${updateFunctionCode}"
+            sleep time: 5, unit: 'SECONDS'
+            try {
+                def lastPublishedLambdaVersionOutput = sh(returnStdout: true, script: "aws lambda publish-version --function-name ${lambda}").trim()
+                echo "lastPublishedLambdaVersionOutput: ${lastPublishedLambdaVersionOutput}"
+                lastPublishedLambdaVersion = lastPublishedLambdaVersionOutput["Version"]
+                echo "lastPublishedLambdaVersion: ${lastPublishedLambdaVersion}"
+            } catch (Exception e) {
+                echo "No published lambda version found"
+                lastPublishedLambdaVersionOutput = null
+                lastPublishedLambdaVersion = 0
+            }
+            lambdaversionobject['secondversion'] = lastPublishedLambdaVersion
+            if (lastPublishedLambdaVersionOutput != null) {
+                apppecconflist.add(lambdaversionobject)
                 try {
-                    def codeDeployIAMRole = sh(returnStdout: true, script: "aws iam create-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --assume-role-policy-document file://./assume-role-policy.json --tags Key=lm_troux_uid,Value=${params.TROUX_UID} Key=aws_iam_permission_boundary_exempt,Value=true").trim()
-                    echo "codeDeployIAMRole: ${codeDeployIAMRole}"
-                    sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/intl-global-deny"
-                    sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/cloud-services/cloud-services-global-deny"
-                    sh "aws iam attach-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-arn arn:aws:iam::${accountId}:policy/intl-cs-global-deny-services"
-                    sh "aws iam put-role-policy --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role --policy-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-policy --policy-document file://./sms-bg-policy.json"
-                    def codeDeployIAMRoleArn = codeDeployIAMRole["Role"]["Arn"]
-                    def codeDeployIAMRoleID = codeDeployIAMRole["Role"]["RoleId"]
-                    sh "aws s3api get-bucket-policy --bucket ${codeDeployAppSpecBucket} --query Policy --output text > policy.json"
-                    sh "cat policy.json"
-                    sh "jq <policy.json 'del(.Statement[0].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
-                    sh "jq <policy.json 'del(.Statement[1].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
-                    sh "jq <policy.json 'del(.Statement[2].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
-                    sh "jq <policy.json 'del(.Statement[3].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
-                    sh "cat policy.json"
-                    sh "jq <policy.json '.Statement[0].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[1].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[2].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[3].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"]'> temp2.json && mv temp2.json policy.json"
-                    sh "cat policy.json"
-                    sh "aws s3api put-bucket-policy --bucket ${codeDeployAppSpecBucket} --policy file://policy.json"
-                    def kmsKekmsKeyID = outputsMapJson.findFirst { it.key.contains("kms") }
-                    def snsTopicArn = outputsMapJson.findFirst { it.key.contains("sns") }
-                    echo "kmsKeyID: ${kmsKeyID}"
-                    echo "snsTopicArn: ${snsTopicArn}"
+                    def alias = sh(returnStdout: true, script: "aws lambda get-alias --function-name ${lambda} --name deployalias --query \"AliasArn\"").trim()
+                    echo "alias: ${alias}"
                 } catch (Exception e) {
-                    echo "Exception: ${e}"
-                    codeDeployIAMRoleArn = null
-                    codeDeployIAMRoleID = null
+                    echo "No alias found"
+                    alias = null
                 }
-                if (codeDeployIAMRoleArn == null || codeDeployIAMRoleID == null || codeDeployIAMRoleArn.isEmpty() || codeDeployIAMRoleID.isEmpty()) {
-                    def codeDeployIAMRole = sh(returnStdout: true, script: "aws iam get-role --role-name ${params.PROGRAM}-${currentEnv}-lc-sms-bg-role").trim()
-                    echo "codeDeployIAMRole: ${codeDeployIAMRole}"
-                    codeDeployIAMRoleArn = codeDeployIAMRole["Role"]["Arn"]
-                    codeDeployIAMRoleID = codeDeployIAMRole["Role"]["RoleId"]
-                    sh "aws s3api get-bucket-policy --bucket ${codeDeployAppSpecBucket} --query Policy --output text > policy.json"
-                    sh "cat policy.json"
-                    sh "jq <policy.json 'del(.Statement[0].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
-                    sh "jq <policy.json 'del(.Statement[1].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
-                    sh "jq <policy.json 'del(.Statement[2].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
-                    sh "jq <policy.json 'del(.Statement[3].Condition.StringNotLike.\"aws:userId\"[] | select(. ==\"${codeDeployIAMRoleID}:*\"))'> temp2.json && mv temp2.json policy.json"
-                    sh "cat policy.json"
-                    sh "jq <policy.json '.Statement[0].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[1].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[2].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"] | .Statement[3].Condition.StringNotLike.\"aws:userId\" += [\"${codeDeployIAMRoleID}:*\"]'> temp2.json && mv temp2.json policy.json"
-                    sh "cat policy.json"
-                    sh "aws s3api put-bucket-policy --bucket ${codeDeployAppSpecBucket} --policy file://policy.json"
-                    kmsKeyID = outputsMapJson.toString().split(',').findAll { it.contains("kms") }.collect { it.split(':')[1].replaceAll('"', '') }
-                    echo "kmsKeyID: ${kmsKeyID}"
-                    snsTopicArn = outputsMapJson.toString().split(',').findAll { it.contains("sns") }.collect { it.split(':')[1].replaceAll('"', '') }
-                    echo "snsTopicArn: ${snsTopicArn}"
-                    def KMSKeyPloicy = readJson file: './kms-key-policy.json'
-                    KMSKeyPloicy["Statement"][0]["Principal"]["AWS"] = "arn:aws:iam::${accountId}:root"
-                    KMSKeyPloicy["Statement"][1]["Principal"]["AWS"] = "arn:aws:iam::${accountId}:root"
-                    KMSKeyPloicy["Statement"][2]["Principal"]["AWS"] = codeDeployIAMRoleArn
-                    writeJSON file: './kms-key-policy.json', json: KMSKeyPloicy
-                    sh "aws kms put-key-policy --key-id ${kmsKeyID} --policy-name default --policy file://./kms-key-policy.json"
+                if (alias != null) {
+                    sh "aws lambda update-alias --function-name ${lambda} --name deployalias --function-version ${currentlyPublishedLambdaVersion}"
                 } else {
-                    echo "Skipping role creation"
+                    sh "aws lambda create-alias --function-name ${lambda} --name deployalias --function-version ${currentlyPublishedLambdaVersion}"
                 }
+            }
+        }
+    }
+    stage ("Update CodeDeploy AppSpec") {
+    }
+    stage ("Update CodeDeploy Specific Resources") {
+    }
+    stage ("Create Deployment") {
+    }
+    stage ("Unknow") {
+
                 try {
                     def smsLambdaList = outputsMapJson.toString().split(',').findAll { it.contains("lambdaoutput") }.collect { it.split(':')[1].replaceAll('"', '') }
                     def apppecconflist = []
@@ -293,11 +325,6 @@ node('linux') {
                     sh "mv appspec.json AppSpecSend${ii}.json"
                     sh "aws s3 cp AppSpecSend${ii}.json s3://${codeDeployAppSpecBucket}/${keybucketAppspec} --sse AES256"
                     apppecconflist[i]['keybucketappspec']=keybucketAppspec
-                }
-                if (deleteCodeDeployResources == "Yes") {
-                    sh "aws deploy delete-application --application-name ${params.PROGRAM}-lc-sms-bg-app"
-                    sh "aws deploy delete-deployment-config --deployment-config-name ${params.PROGRAM}-lc-sms-bg-deployment-config"
-                    sh "aws deploy delete-deployment-group --application-name ${params.PROGRAM}-lc-sms-bg-app --deployment-group-name ${params.PROGRAM}-lc-sms-bg-deployment-group"
                 }
                 try {
                     def appCreated = sh(returnStdout: true, script: "aws deploy get-application --application-name ${params.PROGRAM}-lc-sms-bg-app").trim()
