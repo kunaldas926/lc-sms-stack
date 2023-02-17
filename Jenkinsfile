@@ -87,7 +87,7 @@ def deployCdk(currentEnv, accountId, region) {
 			-profile ${currentEnv} \
 			-lm_troux_uid ${params.TROUX_UID} \
 			-program ${params.PROGRAM} \
-			-connectorLambdaS3Key ${params.sms-connector-lambda-s3-key} \
+			-connectorLambdaS3Key ${params.connector-lambda-s3-key} \
 			-processorLambdaS3Key ${params.processor-lambda-s3-key} \
 			-mapperLambdaS3Key ${params.mapper-lambda-s3-key} \
 			-dbConnectorLambdaS3Key ${params.db-connector-lambda-s3-key} \
@@ -151,7 +151,12 @@ node('linux') {
             def apppecconflist = []
             def lambdaversionobject = [:]
             def lambdaS3KeyList = []
-
+            for (lambda in smsLambdaList) {
+                def paramsKey = lambda.split("reg-${currentEnv}-lc-sms-")[1] + "-s3-key"
+                echo "paramsKey: ${paramsKey}"
+                lambdaS3KeyList.add(params[paramsKey])
+            }
+            echo "lambdaS3KeyList: ${lambdaS3KeyList}"
         }
 
         stage ("Update CodeDeploy Service Role and KMS Policy") {
@@ -200,6 +205,8 @@ node('linux') {
         }
         stage ("Update Lambda Versions") {
             for (lambda in smsLambdaList) {
+            for (i = 0; i < smsLambdaList.size(); i++) {
+                def lambda = smsLambdaList[i]
                 echo "lambda: ${lambda}"
                 lambdaversionobject['lambdaname'] = lambda
                 try {
@@ -214,17 +221,7 @@ node('linux') {
                     currentlyPublishedLambdaVersion = 0
                 }
                 lambdaversionobject['firstversion'] = currentlyPublishedLambdaVersion
-
-                // lambda = reg-dev-sms-connector-lambda
-                // key = connector-lambda-s3-key
-
-                // params = connector-lambda-s3-key
-
-                // ${} =  code/sms/sms-connector-lambda-0.0.1-RELEASE.jar
-
-                def s3Key = "${lambda}".split("reg-${currentEnv}")[1]
-                s3Key = "params.${s3Key}"
-                s3Key = "${s3Key}"
+                def s3Key = lambdaS3KeyList[i]
                 def updateFunctionCode = sh(returnStdout: true, script: "aws lambda update-function-code --function-name ${lambda} --s3-bucket ${codeDeployAppSpecBucket} --s3-key ${s3Key}").trim()
                 echo "updateFunctionCode: ${updateFunctionCode}"
                 sleep time: 5, unit: 'SECONDS'
